@@ -11,7 +11,7 @@ The following reusable actions are available for a variety of tech stacks, pleas
   - Build
   - Artifact publishing 
   - Image publishing
-  - Code Quality 
+  - Code Quality  
 - AppSec
   - Dependency Vulnerability scanning
   - SAST (Static Application Security testing)
