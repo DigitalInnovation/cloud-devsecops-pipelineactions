@@ -22,7 +22,28 @@ The following reusable actions are available for a variety of tech stacks, pleas
   - AKS Helm Deployment
 - Observability 
   - New Relic Deployment Marker
-- Insights (Coming soon)
+##- Insights 
+  The insights workflow sends the pipeline run metrics to New Relic events db based on the New Relic Account ID and API Key provided as secrets.
+  
+  **How to Consume**
+  
+  1. Below is the sample reusable workflow trigger, which should be part of the 'main' branch of the repository. It gets triggered , everytime when there is a workflow run completion. By default the workflow trigger file will be part of the repositories which are created from Brightcloud. 
+  If the repository is not created from Brightcloud, please follow the below step.
+     
+     Copy the workflow file to the **_workflow_** directory in _**main**_ branch.
+     
+     https://github.com/DigitalInnovation/Cloud-DevSecOps-Reusable-Templates/blob/main/.github/workflows/pipeline-insights-reusable-template.yaml
+     
+  2. Pipeline Metrics data is being sent to the below event tables in New Relic.
+    * **pipelinemetricsdb** -> Stroes the details about the workflow
+    * **pipelinejobmetricsdb** -> Stores the details about the Jobs in each workflow
+   Please use the below sample queries to view in New Relic Dashboard (Custom queries can be created based on the data) Or Duplicate the below given Demo Dashboard.
+    * _FROM pipelinemetricsdb SELECT latest(Repository_Name) as 'Repository Name' Facet Repo_ID SINCE 7 days ago_
+    * _FROM pipelinemetricsdb SELECT latest(Total_Duration) FACET Workflow_ID SINCE 7 days ago TIMESERIES 30 minutes LIMIT MAX_
+    * _FROM pipelinejobmetricsdb SELECT latest(Job_Duration) FACET Workflow_ID,Job_Name SINCE 7 days ago TIMESERIES 30 minutes  LIMIT MAX_ 
+    OR
+    Duplicate the below Dashbaord.
+    https://onenr.io/0bRK984bEQE
 
 ## Want to contribute?
 We openly welcome contributors to enhance and grow our resuable actions to improve M&S engineering experience. Please feel free to raise a pull request against this repo with your suggestions / additions and one of the Cloud DevSecOps team will review. 
