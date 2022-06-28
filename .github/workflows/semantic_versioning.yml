@@ -30,7 +30,8 @@ jobs:
         echo "CURRENT TAG: $tag"
         echo "::set-output name=old_version::$tag"
         a=$(echo $tag | cut -c2-)
-        t=(${a//"-"/ })
+        b=(${a//"-"/ })
+        t=${b[0]}
         echo "****************GETTING LATEST COMMIT LOGS***********************"
         if [ -z "$t" ]
         then
@@ -66,11 +67,13 @@ jobs:
         fetch-depth: 0
     - name: Replacing new version in files
       run: |
-        tag1=$(echo ${{needs.Defining_Semantic_Version.outputs.old_version}} | cut -c1-6)
+        ta1=$(echo ${{needs.Defining_Semantic_Version.outputs.old_version}})
+        ta2=${ta1//"-"/ }
+        tag1=${ta2[0]}
         new_tag=${{needs.Defining_Semantic_Version.outputs.new_version}}
         echo "***************Printing $tag1 mentioned places****************"
-        #grep -rn "@latest" *  
-        grep -rn "@$tag1" *  
+        grep -rn "@v1.0.20" *  
+        #grep -rn "@$tag1" *  
         echo "******************Replacing $tag1 with $new_tag in all action.yml files*******************"
         find ./workflows/ -type f -exec sed -i -e "s|@$tag1|@$new_tag|g" {} \;
         #find ./workflows/ -type f -exec sed -i -e "s|@latest|@$new_tag|g" {} \;
