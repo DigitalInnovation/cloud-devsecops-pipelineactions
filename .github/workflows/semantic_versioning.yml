@@ -29,7 +29,8 @@ jobs:
         tag=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/DigitalInnovation/$repo/releases/latest" | jq -r '.tag_name')
         echo "CURRENT TAG: $tag"
         echo "::set-output name=old_version::$tag"
-        t=$(echo $tag | cut -c2-6)
+        a=$(echo $tag | cut -c2-)
+        t=(${a//"-"/ })
         echo "****************GETTING LATEST COMMIT LOGS***********************"
         if [ -z "$t" ]
         then
