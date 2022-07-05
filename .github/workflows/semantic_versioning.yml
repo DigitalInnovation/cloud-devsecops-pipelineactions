@@ -166,3 +166,14 @@ jobs:
         -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"  \
         https://api.github.com/repos/DigitalInnovation/$repo/releases \
         -d '{"tag_name":"'"$new_tag_commit"'","target_commitish":"main","name":"'"$new_tag_commit"'","body":"'"$commit_msg"'","draft":false,"prerelease":false,"generate_release_notes":true}'
+
+
+  Creating_Issue_On_Major :
+    needs: [Creating_three_tag, Defining_Semantic_Version, Replacing_New_Version_in_files, Creating_Release]
+    if: needs.Defining_Semantic_Version.outputs.commit_msg == 'Major Changes'
+    name: Creating_Issue_On_Major
+    runs-on: ubuntu-latest
+    steps:
+    - name: Calling workflow in cloud9-devsecops-consumer-registry repository to create GitHub issue
+      run: | 
+        curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.TOKEN}}" https://api.github.com/repos/DigitalInnovation/cloud9-devsecops-consumer-registry/dispatches -d '{"event_type":"on-new-feature","client_payload":{"version": "${{needs.Creating_three_tag.outputs.new_version_with_commit}}"}}'

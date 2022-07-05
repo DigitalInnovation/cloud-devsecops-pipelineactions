@@ -6,6 +6,7 @@ We have created automated release for our **cloud-devsecops-pipelineactions** re
 - [Changes expected in repository](#changes-expected-in-repository)
 - [Steps to be followed by Cloud9_DevSecOps Team](#steps-to-be-followed-by-cloud9-devsecops-team)
 - [Steps to be followed by Product Team](#steps-to-be-followed-by-product-team)
+- [Sending Notification on Major Release](#sending-notification-on-major-release)
 
 ## Overview
 Releases are deployable software iterations you can package and make available for a wider audience to download and use. Releases are based on Git tags, which mark a specific point in your repository's history. 
@@ -64,3 +65,9 @@ If Product team need specific version of composite actions, they can follow thes
     - name: ========== AZURE WEB APP Deployment ==========
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD/azure-webapp@v1.0.1-1234567
    ```
+## Sending Notification on Major Release
+When new feature/ new funtionality(Major Changes) introduced in our repository, notification will be sent to all consumer repository using GitHub issues. 
+
+Workflow for creating consumer repository available [here](https://github.com/DigitalInnovation/cloud9-devsecops-consumer-registry).
+
+Note: Workflow will be triggered using [repository dispatch](https://docs.github.com/en/rest/repos/repos#create-a-repository-dispatch-event) event.

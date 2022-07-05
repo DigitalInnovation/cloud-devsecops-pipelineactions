@@ -49,6 +49,10 @@ The insights workflow sends the pipeline run metrics to New Relic events db base
 ## Want to contribute?
 We openly welcome contributors to enhance and grow our resuable actions to improve M&S engineering experience. Please feel free to raise a pull request against this repo with your suggestions / additions and one of the Cloud DevSecOps team will review. 
 
+## Consumer Registry
+Refer cloud-devsecops-pipelineactions [wiki](https://github.com/DigitalInnovation/cloud-devsecops-pipelineactions/wiki) page.
+- [Product Teams repositort list](https://github.com/DigitalInnovation/cloud-devsecops-pipelineactions/wiki/Product_Team_Repository_List)
+
 ## Documentation
 - [Semantic versioning](docs/semantic_versioning.md)
 
