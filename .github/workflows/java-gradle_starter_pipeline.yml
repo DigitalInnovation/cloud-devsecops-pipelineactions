@@ -1,0 +1,65 @@
+name: Starter Pipeline for Java Gradle Project using Github Packages
+
+on: pull_request
+  #push:
+    #branches: [ main ]
+
+######  Please Make sure you have the secrets setup in ################
+
+#  SAML_GITHUB_TOKEN --> PAT of Y account to connect to repository [required]
+#  SAML_GITHUB_USER --> Y account user name, [required] to authenticate github artifacts
+
+#  #####Secrets for running Code Quality#####
+#  SONAR_PROJECT_NAME
+#  SONAR_PROJECT_KEY
+#  SONAR_TOKEN
+
+#  secrets used for APP-SEC scan 
+# SNYK_API_TOKEN
+
+# FORTIFY_RELEASE_ID
+# FORTIFY_CLIENT_ID
+# FORTIFY_CLIENT_SECRET
+
+# PRISMA_URL  -- already setup as a environement variable
+# PRISMA_ACCESS_KEY_ID 
+# PRISMA_SECRET_KEY
+
+#### Secrets for webapp Deployment
+# AZURE_WEBAPP_NAME
+# AZURE_WEBAPP_PUBLISH_PROFILE {if you have been provided with one}
+
+#### Secrets for Helm Deployment
+# KUBE_CONFIG
+
+# Secretes for setting up New relic Deployment Marker and Insights.
+# The starter script uses the secrect under environment : Non-prod.
+# NEW_RELIC_API_KEY
+# NEW_RELIC_ACCOUNT_ID
+# NEW_RELIC_APP_ID
+
+  
+jobs:
+  starter_call:
+    environment: Non-prod
+    uses: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java/.github/workflows/java-gradle_starter_pipeline.yml@testing-pipeline
+    secrets:
+      SAML_GITHUB_TOKEN: ${{secrets.SAML_GITHUB_TOKEN}}
+      SAML_GITHUB_USER: ${{secrets.SAML_GITHUB_USER}}
+      SONAR_PROJECT_NAME: ${{secrets.SONAR_PROJECT_NAME_JAVA}}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY_JAVA }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_JAVA }}
+      KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+      AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
+      SUBSCRIPTION_ID: ${{ secrets.SUBSCRIPTION_ID }}
+      SNYK_API_TOKEN: ${{ secrets.SNYK_API_TOKEN }}
+      FORTIFY_RELEASE_ID: ${{ secrets.FORTIFY_RELEASE_ID }}
+      FORTIFY_CLIENT_ID: ${{ secrets.FORTIFY_CLIENT_ID }}
+      FORTIFY_CLIENT_SECRET: ${{ secrets.FORTIFY_CLIENT_SECRET }}
+      PRISMA_ACCESS_KEY_ID: ${{ secrets.PRISMA_ACCESS_KEY_ID }}
+      PRISMA_SECRET_KEY: ${{ secrets.PRISMA_SECRET_KEY }}
+      SP_CLIENT_ID: ${{ secrets.SP_CLIENT_ID }}
+      SP_PASSWORD: ${{ secrets.SP_PASSWORD }}
+      NEW_RELIC_API_KEY: ${{ secrets.NEW_RELIC_API_KEY }}
+      NEW_RELIC_ACCOUNT_ID: ${{ secrets.NEW_RELIC_ACCOUNT_ID }}
+      NEW_RELIC_APP_ID: ${{ secrets.NEW_RELIC_APP_ID }}
