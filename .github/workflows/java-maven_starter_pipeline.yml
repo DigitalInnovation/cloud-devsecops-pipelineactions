@@ -1,5 +1,5 @@
 name: Starter Pipeline for Java Maven Project using Github Packages
-on: pull_request
+on: push
   #push:
     #branches: [ main ]
   
