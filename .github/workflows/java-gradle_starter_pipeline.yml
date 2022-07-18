@@ -116,7 +116,6 @@ jobs:
 # Provide the Dockerfile name and its relative path to build the image
         cr_dockerfile_name: Dockerfile 
         cr_dockerfile_path: ./ 
-        cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUB_TOKEN}}
 # Provide the information of the Projects ImageName, Imagetag, 
 # Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry you can setup secrets to reference here
 # ${{ secrets.REGISTRY_SERVER }}  ${{ secrets.REGISTRY_USER }} ${{ secrets.REGISTRY_PASSWORD }} 
