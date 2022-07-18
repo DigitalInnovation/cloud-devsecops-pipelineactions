@@ -1,9 +1,8 @@
-name: Starter Pipeline for Java Gradle Project using Github Packages
-
+name: Starter Pipeline for Java Maven Project using Github Packages
 on: pull_request
   #push:
     #branches: [ main ]
-
+  
 ######  Please Make sure you have the secrets setup in ################
 
 #  SAML_GITHUB_TOKEN --> PAT of Y account to connect to repository [required]
@@ -21,34 +20,50 @@ on: pull_request
 # FORTIFY_CLIENT_ID
 # FORTIFY_CLIENT_SECRET
 
-# PRISMA_URL  -- already setup as a environement variable
+# PRISMA_URL
 # PRISMA_ACCESS_KEY_ID 
 # PRISMA_SECRET_KEY
 
 #### Secrets for webapp Deployment
 # AZURE_WEBAPP_NAME
-# AZURE_WEBAPP_PUBLISH_PROFILE {if you have been provided with one}
+# AZURE_WEBAPP_PUBLISH_PROFILE
 
 #### Secrets for Helm Deployment
 # KUBE_CONFIG
 
-# Secretes for setting up New relic Deployment Marker and Insights.
+# Secretes for setting up New relic Deployment Marker and Insights
 # The starter script uses the secrect under environment : Non-prod.
 # NEW_RELIC_API_KEY
 # NEW_RELIC_ACCOUNT_ID
 # NEW_RELIC_APP_ID
 
+
+# set GLOBAL environment variable to be used in the workflow and reference using ${{env.name_declared}}
+env:
+  # CI CD PARAMETERS
+  APPLICATION_NAME: java-mvnstarter
+  environment: Non-prod
+  SONAR_CLOUD_URL: https://sonarcloud.io
+  GH_REGISTRY: ghcr.io/${{github.repository}} 
+  CONTAINER_IMAGE_NAME: java-mvnstarter-webapp-sample
+  image_tag: ${{ github.run_number }}
+  Chart: helm-sample-java #Update based on the helm chart folder
+  CLUSTER_NAMESPACE: sample-app
+  PRISMA_URL: https://europe-west3.cloud.twistlock.com/eu-2-143543845
+  SP_TENANT_ID: bd5c6713-7399-4b31-be79-78f2d078e543
   
 jobs:
   pre-work-setup:
     runs-on: ubuntu-latest
     outputs:
       GH_REGISTRY_SERVER_LOWERCASE: ${{ steps.get_gh_registry.outputs.GH_REGISTRY_LOWER }}
+      
     steps:
       - name: == pre initialization and setting up Variables ======
         id: get_gh_registry
         run: |
-          GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          #GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          GH_REGISTRY_NAME_LOWER=ghcr.io/digitalinnovation/ra_sample_java
           echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
          
 ##================================================================================================================================# 
@@ -65,22 +80,22 @@ jobs:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
-             
+    
     - name: ========== Build and push Build Artifacts to artifact Store ==========
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@latest
       with:
        
 # provide the project Build tool,  build file path and its relative location
-        build_tool: gradle  # Supported values:[ maven/mvn, gradle ]
-        build_file_name: gradlew
+        build_tool: maven  # Supported values:maven/mvn/gradle
+        build_file_name: pom.xml
         build_file_path: .
 # provide the Settings.xml filename and its relative location
-        settings_file_name: settings.gradle 
+        settings_file_name: settings.xml 
         settings_file_path: .  
 # Build phases/ sctions to execute and any  arguments that you need to execute the build depending on the build tool used
 # {sample phase has been added add additional maven phase if needed }
-        build_phases: clean build
-        build_arguments: -Pgpr.token=${{secrets.SAML_GITHUB_TOKEN}} -Pgpr.user=${{ secrets.SAML_GITHUB_USER }} -Papp-version=${{github.run_number}}
+        build_phases: clean package deploy
+        build_arguments: -Dgh_repo.pat=${{secrets.SAML_GITHUB_TOKEN}} -Dgh_repo.user=${{ secrets.SAML_GITHUB_USER }} 
         
         
 # Flag to run Code Quality Scan (Mandatory),       
@@ -89,7 +104,7 @@ jobs:
 # Ignore next 5 parameters (with cq_*) if run_code_quality_analysis is false
 # If the fag is true, Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
         cq_host_url:  ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: ${{ secrets.SONAR_CLOUD_URL_JAVA }}
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_JAVA }}
         cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_JAVA }} 
         cq_token: ${{ secrets.SONAR_TOKEN_JAVA }}
         cq_scan_arguments: -Dsonar.organization=digitalinnovation 
@@ -97,11 +112,11 @@ jobs:
 # Flag to include Creation of Container Image and Push to Registry       
         build_and_push_container_image: true  # does the build create docker image and push to registry
         
-# Ignore all  parametes with cr_* if build_and_push_container_image is false [ you can also invoke this seperately]
+# Ignore all  parametes with cr_* if build_and_push_container_image is false [ you can also invoke this separately]
 # Provide the Dockerfile name and its relative path to build the image
         cr_dockerfile_name: Dockerfile 
         cr_dockerfile_path: ./ 
-        cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUb_TOKEN}}
+        cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUb_TOKEN}}         
 # Provide the information of the Projects ImageName, Imagetag, 
 # Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry you can setup secrets to reference here
 # ${{ secrets.REGISTRY_SERVER }}  ${{ secrets.REGISTRY_USER }} ${{ secrets.REGISTRY_PASSWORD }} 
@@ -116,8 +131,8 @@ jobs:
         cr_tenant: ${{secrets.ACR_TENANT}}  
         cr_subscription: ${{secrets.SUBSCRIPTION_ID}}
         
-# ##================================================================================================================================#  
-# # Code Quality Scan Action - SonarCloud is the Recommended Tool        
+##================================================================================================================================#  
+# Code Quality Scan Action - SonarCloud is the Recommended Tool        
   
   Code_Quality_Scan:
     runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
@@ -136,9 +151,11 @@ jobs:
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@latest
       with:
 # Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
-        build_tool: gradle
-        build_file_name: gradlew
-        build_file_path: . 
+        build_tool: maven
+        build_file_name: pom.xml
+        build_file_path: .
+        settings_file_name: settings.xml 
+        settings_file_path: . 
         cq_host_url: ${{env.SONAR_CLOUD_URL }}
         cq_project_name: ${{ secrets.SONAR_PROJECT_NAME }} 
         cq_project_key: ${{ secrets.SONAR_PROJECT_KEY }} 
@@ -153,7 +170,7 @@ jobs:
 
 #   Build_Push_Container_image:
 #     runs-on: ubuntu-latest
-#     needs: [pre-work-setup, Build_Test_and_Deploy_Package]
+#     needs: [pre-work-setup]
 #     steps:
 #     - uses: actions/checkout@v3
 #     - name: =========  Build and push image to Container Registry. ===========
@@ -167,34 +184,38 @@ jobs:
 #         cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUb_TOKEN}} 
 #  # Provide the information of the Projects ImageName, Imagetag, 
 #  # Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry
+ 
 #         cr_servername: ${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   #reference from output of job: Pre-Work
 #         cr_username: ${{secrets.SAML_GITHUB_USER }} 
 #         cr_password: ${{secrets.SAML_GITHUB_TOKEN}}
 #         cr_imagename: ${{env.CONTAINER_IMAGE_NAME}} 
 #         cr_imagetag: ${{ github.run_number }} 
+        
 #  # Below properties is required if  you are using ACR
-#         cr_tenant: ${{secrets.ACR_TENANT}}
-#         cr_subscription: ${{secrets.SUBSCRIPTION_ID}}          
+#         #cr_tenant: ${{secrets.ACR_TENANT}}
+#         #cr_subscription: ${{secrets.SUBSCRIPTION_ID}}                   
   
-# ##================================================================================================================================#  
-# # Appsec Scan are mandated for All Projects and has to be included in your pipeline
+##================================================================================================================================#  
+# Appsec Scan are mandated for All Projects and has to be included in your pipeline
+
 
   Run_appsec_scans:
     runs-on: ubuntu-latest
-    needs: [pre-work-setup, Build_Test_and_Deploy_Package]
-    enviornment: Non-prod
+    needs: [ pre-work-setup, Build_Test_and_Deploy_Package ]
     continue-on-error: true
+    enviornment: Non-prod
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v1\
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
+       
     - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@latest
       with:
 # Set Falg to true if you want to run Dependency (SNYK) Scan,provide Name of the project Example: Test and Token should be created as GitHub secret
         application_name: ${{env.APPLICATION_NAME}}  # Name of your Application
-        run_dependency_scan: false
+        run_dependency_scan: true
         dependency_scan_token: ${{ secrets.SNYK_API_TOKEN }}
         
 # Set Falg to true if you want to run SAST (Fortify) Scan, provide Release ID,Scanner API Key and Scanner API secret should be created as secret
@@ -203,7 +224,7 @@ jobs:
         sast_api_key: ${{ secrets.FORTIFY_CLIENT_ID}}
         sast_api_secret: ${{ secrets.FORTIFY_CLIENT_SECRET}}
         # flag download the sast scan result, if run_sast_scan: true
-        download_sast_scan_result: true
+        download_sast_scan_result: false
         
 # Set Falg to true if you want to run Container (PRISMA) Scan,provide  Scanner Console URL,username and password should be created as GitHub secret
         run_container_scan: true
@@ -219,13 +240,13 @@ jobs:
         registry_username: ${{ secrets.SAML_GITHUB_USER }} 
         registry_password: ${{ secrets.SAML_GITHUB_TOKEN }} 
 
-# ##================================================================================================================================# 
+##================================================================================================================================# 
 
-# # Deployment - use this if you are using helm to deploy your project
+# Deployment - use this if you are using helm to deploy your project
 
   Helm_deployment:
     runs-on: ubuntu-latest
-    needs: [pre-work-setup, Run_appsec_scans]
+    needs: [ pre-work-setup, Run_appsec_scans ]
     # set the environment variable for job to use environement specific Secrets if configured.
     environment: Non-prod
     continue-on-error: true
@@ -233,9 +254,9 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
         with:
-        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-        token: ${{ secrets.SAML_GITHUB_TOKEN }}
-        ref: main
+          repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+          token: ${{ secrets.SAML_GITHUB_TOKEN }}
+          ref: main
 
       - name: Deploy application 
         uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
@@ -257,9 +278,10 @@ jobs:
           cluster_namespace: ${{ env.CLUSTER_NAMESPACE }}  #  sample-app
 # Flag to create new namespace if not already existing
           create_namespace: false
-# Additonal helm arguments eg: --set 'dockerImage=${{env.CONTAINER_IMAGE_NAME}} and Flag to run as dry run
+# Additional helm arguments eg: --set 'dockerImage=${{env.CONTAINER_IMAGE_NAME}} and Flag to run as dry run
           helm_argument: "--set 'image.repository=${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}/${{env.CONTAINER_IMAGE_NAME}}:${{ github.run_number }}'"
           dry_run: false
+
 
 
 ##================================================================================================================================# 
@@ -273,9 +295,9 @@ jobs:
     steps:  
     - uses: actions/checkout@v2
       with:
-          repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-          token: ${{ secrets.SAML_GITHUB_TOKEN }}
-          ref: main
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
      
     - name: 'Deploy to Azure WebApp'
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
@@ -300,7 +322,6 @@ jobs:
 
 ##================================================================================================================================# 
 
-
           
 #Observability  
   NewRelic_Deploymentmarker:
@@ -322,4 +343,4 @@ jobs:
         comment: " comments "  
 
         
-# ##============================END OF PIPELINE WORKFLOW=================================================================================# 
+##============================END OF PIPELINE WORKFLOW=================================================================================# 

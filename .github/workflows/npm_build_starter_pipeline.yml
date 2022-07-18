@@ -1,0 +1,342 @@
+name: CICD-NODE-WEBAPP Deployment Starter Pipeline
+on: pull_request
+
+# #####  Please Make sure you have the secrets setup in ################
+
+#  SAML_GITHUB_TOKEN --> PAT of Y account to connect to repository [required]
+#  SAML_GITHUB_USER --> Y account user name, [required] to authenticate github artifacts
+
+#  ### Secrets for running Code Quality ###
+#  SONAR_PROJECT_NAME
+#  SONAR_PROJECT_KEY
+#  SONAR_TOKEN
+
+#  secrets used for APP-SEC scan 
+#  SNYK_API_TOKEN
+
+#  FORTIFY_RELEASE_ID
+#  FORTIFY_CLIENT_ID
+#  FORTIFY_CLIENT_SECRET
+
+#  PRISMA_URL
+#  PRISMA_ACCESS_KEY_ID 
+#  PRISMA_SECRET_KEY
+
+#  ### Secrets for webapp Deployment ###
+#  AZURE_WEBAPP_NAME
+#  AZURE_WEBAPP_PUBLISH_PROFILE
+#  ### the below sercice principal secretes are needed if PUBLISH PROFILE is not used for Deployment
+#  SP_CLIENT_ID
+#  SP_PASSWORD
+#  SUBSCRIPTION_ID
+#  SP_TENANT_ID
+
+#  ### Secrets for setting up New relic Deployment Marker and Insights ###
+#  The Starter pipeline uses environment: Non-prod
+#  NEW_RELIC_API_KEY
+#  NEW_RELIC_ACCOUNT_ID
+#  NEW_RELIC_APP_ID
+
+#  ###################################
+
+# set the environment variable to be used in the workflow and reference is using ${{env.name_declared}}
+
+env: 
+  APPLICATION_NAME: sample-app
+  environment: Non-prod
+  GH_REGSITRY: ghcr.io/${{github.repository}} 
+  CONTAINER_IMAGE_NAME: node-starter-webapp-sample
+  #image: ${{ secrets.REGISTRY_SERVER }}/${{secrets.IMAGE_NAME}}:${{ github.run_number }}
+  image_tag: ${{ github.run_number }}
+  SONAR_CLOUD_URL: https://sonarcloud.io
+  PRISMA_URL: https://europe-west3.cloud.twistlock.com/eu-2-143543845
+  SP_TENANT_ID: bd5c6713-7399-4b31-be79-78f2d078e543  
+
+
+jobs:
+  Pre-Work:
+    runs-on: ubuntu-latest 
+    outputs:
+        GH_REGISTRY_SERVER_LOWERCASE: ${{ steps.get_gh_registry.outputs.GH_REGISTRY_LOWER }}
+        
+    steps:
+      - run: echo Executing CI CD Build for Node based Sample Repository
+      - name: == pre initialization and setting up Variables ======
+        id: get_gh_registry
+        run: |
+          GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
+       
+    
+    
+##================================================================================================================================# 
+# CI Build and Package / Image Creation  - GITHub Packages is rescommended for Storing packages
+
+  Build_Test_and_Publish_Package:
+    runs-on: ubuntu-latest
+    enviornment: Non-prod
+    needs: Pre-Work
+    steps:
+    - name: ============ Checkout the repository Code ==========
+      uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+      
+    - name: ========== Build and push Build Artifacts to artifact Store ==========
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@main
+      env: # provide Github PAT to authenticate github package registry.
+        NODE_AUTH_TOKEN: ${{secrets.SAML_GITHUB_TOKEN}} 
+      with:
+# provide the project Build tool,build file path and its relative location Build tool
+        build_tool: npm
+        application_name: devsecops-sample-app
+        build_file_path: .
+        build_file_name: package.json
+        node_version: 12
+# artifact repository url for github packages
+        artifact_repository_url: https://npm.pkg.github.com/
+# npm build phases to execute and any npm arguments that you need to execute the build. {add additional npm phase if needed - install test publish  }
+        build_phases: install   # pack  publish
+        run_code_quality_analysis: false
+
+# Flag to include Creation of Container Image and Push to Registry       
+        build_and_push_container_image: false  # does the build create docker image and push to registry
+        
+# Ignore all  parametes with cr_* if build_and_push_container_image is false [ you can also invoke this seperately]
+# Provide the Dockerfile name and its relative path to build the image
+        cr_dockerfile_name: Dockerfile 
+        cr_dockerfile_path: ./ 
+        cr_docker_arguments: --build-arg NODE_AUTH_TOKEN=$NODE_AUTH_TOKEN
+# Provide the information of the Projects ImageName, Imagetag, 
+# Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry you can setup secrets to reference here
+# ${{ secrets.REGISTRY_SERVER }}  ${{ secrets.REGISTRY_USER }} ${{ secrets.REGISTRY_PASSWORD }} 
+        
+        cr_servername: ${{needs.Pre-Work.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   #reference from output of job: Pre-Work
+        cr_username: ${{secrets.SAML_GITHUB_USER }} 
+        cr_password: ${{secrets.SAML_GITHUB_TOKEN}}
+        cr_imagename: ${{env.CONTAINER_IMAGE_NAME}} 
+        cr_imagetag: ${{github.run_number }} 
+        
+# update the tenant ID if you are using ACR 
+        cr_tenant: ${{secrets.ACR_TENANT}}  
+        cr_subscription: ${{secrets.SUBSCRIPTION_ID}}    
+        
+
+
+# # upload the package created for testing purpose comment this if not needed
+#     - name: 'Upload the package to build'
+#       uses: actions/upload-artifact@v2
+#       with:
+#         name: devsecops-sample-app-${{github.sha }}.tgz
+#         path: |
+#           ./digitalinnovation-*.tgz     
+
+
+# ##================================================================================================================================#  
+# Code Quality Scan Action - SonarCloud is the Recomended Tool
+
+  Code_Quality_Scan:
+    runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
+    needs: Build_Test_and_Publish_Package 
+    enviornment: Non-prod
+    continue-on-error: true
+    steps:
+    - name: ============ Checkout the repository Code ========== same as git-repo (get)
+      uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+     
+    - name: ========== call custom action to execute CodeQuality Scan ==========
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@latest
+      with:
+# Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
+        build_tool: npm
+        build_file_name: package.json
+        build_file_path: .
+        cq_host_url: ${{env.SONAR_CLOUD_URL }}
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_NODE }}
+        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_NODE }} 
+        cq_token: ${{ secrets.SONAR_TOKEN_NODE }}
+        cq_scan_arguments: -Dsonar.organization=digitalinnovation
+          
+        
+##================================================================================================================================#  
+# Create Image and push to Containder Registry - GITHUB packages is the recommended Registry Server
+
+  Build_Push_Container_image:
+    runs-on: ubuntu-latest 
+    enviornment: Non-prod
+    needs: [Pre-Work, Build_Test_and_Publish_Package]
+    steps:
+    - name: ============ Checkout the repository Code ========== same as git-repo (get)
+      uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+      
+    - name: =========  Build and push image to Container Registry. ===========
+# you can also add this as part of the build workflow by setting the build_and_push_container_image: true
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI/push_image@latest
+      with:
+# Provide the Dockerfile name and its relative path to build the image
+        cr_dockerfile_name: Dockerfile
+        cr_dockerfile_path: ./
+        cr_docker_arguments: --build-arg NODE_AUTH_TOKEN=$NODE_AUTH_TOKEN
+# provide the information of the Projects ImageName, Imagetag, 
+# container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry
+        cr_imagename:   ${{env.CONTAINER_IMAGE_NAME }}   # devsecops_node_sample
+        cr_imagetag: ${{ github.run_number }}
+        cr_username: ${{ secrets.SAML_GITHUB_USER }}
+        cr_password: ${{ secrets.SAML_GITHUB_TOKEN }}
+        cr_servername: ${{needs.Pre-Work.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   #reference from output of job: Pre-Work
+ # below properties is required if  you are using ACR
+        cr_tenant: ${{secrets.SP_TENANT_ID}}
+
+
+# ##===========================================================================================================================================#  
+# Appsec Scans are mandated for All Projects and has to be included in your pipeline - Set the scan flags based on your project requirements.
+
+  Run_appsec_scans:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    enviornment: Non-prod
+    needs: [Pre-Work, Build_Push_Container_image ]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+          repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
+          token: ${{ secrets.SAML_GITHUB_TOKEN }}
+          ref: main
+    
+####  Run build to get the dependencies  ####  
+    - name: ========== Build and push Build Artifacts to artifact Store ==========
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@main
+      env: # provide Github PAT to authenticate github package registry.
+        NODE_AUTH_TOKEN: ${{secrets.SAML_GITHUB_TOKEN}} 
+      with:
+# provide the project Build tool,build file path and its relative location Build tool
+        build_tool: npm
+        application_name: devsecops-sample-app
+        build_file_path: .
+        build_file_name: package.json
+        node_version: 12
+# artifact repository url for github packages
+        artifact_repository_url: https://npm.pkg.github.com/
+# npm build phases to execute and any npm arguments that you need to execute the build. {add additional npm phase if needed - install test publish  }
+        build_phases: install
+        
+####  Run Composite actions to execute Various APP SEC scan per requirement  ####          
+    - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@latest
+      with:
+# Set Flag to true if you want to run Dependency (SNYK) Scan,provide Name of the project Example: Test and Token should be created as GitHub secret
+        application_name: ${{env.APPLICATION_NAME}}  # Name of your Application
+        run_dependency_scan: true
+        dependency_scan_token: ${{ secrets.SNYK_API_TOKEN }}
+        build_tool: npm
+        
+# Set Flag to true if you want to run SAST (Fortify) Scan, provide Release ID,Scanner API Key and Scanner API secret should be created as secret
+        run_sast_scan: false
+        sast_release_id: ${{ secrets.FORTIFY_RELEASE_ID }}
+        sast_api_key: ${{ secrets.FORTIFY_CLIENT_ID}}
+        sast_api_secret: ${{ secrets.FORTIFY_CLIENT_SECRET}}
+        # flag download the sast scan result, if run_sast_scan: true
+        download_sast_scan_result: false
+        
+# Set Flag to true if you want to run Container (PRISMA) Scan,provide  Scanner Console URL,Access Key ID and Secret Key should be created as GitHub secret
+        run_container_scan: true
+        container_scan_url: ${{env.PRISMA_URL}}
+        container_scan_user: ${{secrets.PRISMA_ACCESS_KEY_ID}}
+        container_scan_password: ${{ secrets.PRISMA_SECRET_KEY }}
+        
+# Provide image name,tag, to be pulled in ACR. Example: nginx, 
+        image_name:  ${{env.CONTAINER_IMAGE_NAME}}   
+               #devsecops_node_sample
+        image_tag: ${{ github.run_number }}
+# ACR/GCR Login Server name,Username and Password Example: <ACRname>azurecr.io
+        registry_server: ${{needs.Pre-Work.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   # reference from output of job: Pre-Work
+        registry_username: ${{ secrets.SAML_GITHUB_USER }}
+        registry_password: ${{ secrets.SAML_GITHUb_TOKEN }}
+  
+##================================================================================================================================# 
+####   Sample Webapp Deployment require the webapp name, and the publish profile along with the path to the pacage or source path.       
+            
+# # Deploy the webapp to the webapp layer  
+  Deploy-webapp:
+    runs-on: ubuntu-latest
+    needs: [Pre-Work, Build_Push_Container_image]  # needs pre-work if you are referencing the output
+    environment: Non-prod
+    steps:  
+    - uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+
+    - name: 'verify download'
+      run: |
+         ls -lart
+    - name: ========== Rerun build to Install Dependencies before Deployment ==========
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@main
+      with:
+        build_tool: npm
+        application_name: devsecops-sample-app
+        build_file_path: .
+        build_file_name: package.json
+        node_version: 12
+        artifact_repository_url: https://npm.pkg.github.com/
+        build_phases: install 
+        run_code_quality_analysis: false
+        
+         
+    - name: 'Deploy to Azure WebApp'
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
+      with:
+        is_azure_webapp_deployment: true
+        environment: dev    
+        application_release_name: 2.10
+        webapp_name: ${{secrets.AZURE_WEBAPP_NAME}}
+        
+        #source_path: .    # you can reference source or container image:tag
+        image_name: ${{needs.Pre-Work.outputs.GH_REGISTRY_SERVER_LOWERCASE}}/${{env.CONTAINER_IMAGE_NAME}}
+        image_tag: ${{ github.run_number }}
+
+        #azure_profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        
+        # the below parameters are not Required if you are using PUBLISH Profile.
+        azure_client_id: ${{secrets.SP_CLIENT_ID}}
+        azure_client_secret: ${{secrets.SP_PASSWORD}}
+        subscription: ${{secrets.SUBSCRIPTION_ID}}
+        azure_tenant_id: ${{env.SP_TENANT_ID}}
+        
+#     - uses: actions/download-artifact@v3
+#       with:
+#        name: devsecops-sample-app-${{github.sha }}.tgz
+
+##================================================================================================================================# 
+          
+# Observability 
+  NewRelic_Deploymentmarker:
+    runs-on: ubuntu-latest
+    needs: [Pre-Work, Deploy-webapp]
+    environment: Non-prod
+    continue-on-error: true
+    steps:
+    - name: New Relic deployment marker
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@latest
+      with: 
+        set_newRelic_Deployment_marker: true
+# provide Newrelic API Key,Account ID,Application ID and Newrelic user should be created as GitHub Secret
+        newRelic_key: ${{secrets.NEW_RELIC_API_KEY}}
+        newRelic_accountId: ${{secrets.NEW_RELIC_ACCOUNT_ID}}
+        newRelic_applicationId: ${{secrets.NEW_RELIC_APP_ID}}
+        newRelic_user: ${{ github.actor }}
+        git_commit_id: ${{ github.sha }}
+        comment: " Sample Test "  
+        
+        
+##============================END OF PIPELINE WORKFLOW=================================================================================#
