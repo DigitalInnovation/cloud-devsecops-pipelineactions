@@ -49,6 +49,7 @@ jobs:
         id: get_gh_registry
         run: |
           GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          echo $GH_REGISTRY_NAME_LOWER
           echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
          
 ##================================================================================================================================# 
