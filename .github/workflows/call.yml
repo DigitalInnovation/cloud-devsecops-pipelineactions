@@ -1,0 +1,7 @@
+name: Workflow_call
+on: push
+
+jobs:
+  call-workflow-passing-data:
+    uses: DigitalInnovation/selfservice-github-selfhosted-runner/.github/workflows/call1.yml@eb-fix
+    secrets: inherit
