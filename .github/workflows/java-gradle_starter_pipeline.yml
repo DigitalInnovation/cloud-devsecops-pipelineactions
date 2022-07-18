@@ -63,7 +63,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
              
     - name: ========== Build and push Build Artifacts to artifact Store ==========
@@ -129,7 +129,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
 
     - name: ========== Run Code Quality Scan ==========
@@ -188,7 +188,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
     - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@latest
       with:
@@ -234,7 +234,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.SAML_GITHUB_TOKEN }}
           ref: main
 
       - name: Deploy application 
@@ -274,7 +274,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
           repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.SAML_GITHUB_TOKEN }}
           ref: main
      
     - name: 'Deploy to Azure WebApp'

@@ -81,7 +81,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
       
     - name: ========== Build and push Build Artifacts to artifact Store ==========
@@ -147,7 +147,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
      
     - name: ========== call custom action to execute CodeQuality Scan ==========
@@ -176,7 +176,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
       
     - name: =========  Build and push image to Container Registry. ===========
@@ -210,7 +210,7 @@ jobs:
     - uses: actions/checkout@v3
       with:
           repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.SAML_GITHUB_TOKEN }}
           ref: main
     
 ####  Run build to get the dependencies  ####  
@@ -274,7 +274,7 @@ jobs:
     - uses: actions/checkout@v2
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Node
-        token: ${{ secrets.TOKEN }}
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: main
 
     - name: 'verify download'
