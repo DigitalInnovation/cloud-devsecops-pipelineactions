@@ -205,7 +205,7 @@ jobs:
     continue-on-error: true
     environment: Non-prod
     steps:
-    - uses: actions/checkout@v1\
+    - uses: actions/checkout@v1
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
@@ -264,9 +264,9 @@ jobs:
           # Flag to verify if this is helm deployment
           is_helm_deployment: true
  # Deployment environment name. Supported values: dev/release/prod 
-          environment: ${{env.environment}}
+          environment: dev
             # Release name of the helm application
-          application_release_name: ${{env.APPLICATION_NAME}}-${{env.environment}}
+          application_release_name: ${{env.APPLICATION_NAME}}-dev
             # Kubeconfig for AKS cluster connection, should be created as GitHub secret
           kube_config: ${{ secrets.KUBE_CONFIG }}            
 # provide relative path,Name of the values file to use to help helm chart folder

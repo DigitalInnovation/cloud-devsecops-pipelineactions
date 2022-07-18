@@ -1,5 +1,5 @@
 name: CICD-NODE-WEBAPP Deployment Starter Pipeline
-on: pull_request
+on: push
 
 # #####  Please Make sure you have the secrets setup in ################
 
@@ -64,7 +64,8 @@ jobs:
       - name: == pre initialization and setting up Variables ======
         id: get_gh_registry
         run: |
-          GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          #GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          GH_REGISTRY_NAME_LOWER=ghcr.io/digitalinnovation/cloud-devsecops-pipeline-node
           echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
        
     
