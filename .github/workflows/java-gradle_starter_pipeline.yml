@@ -43,6 +43,9 @@ jobs:
   starter_call:
     environment: Non-prod
     uses: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java/.github/workflows/java-gradle_starter_pipeline.yml@testing-pipeline
+    with:
+          username: GopikaV24
+          token: ${{secrets.TOKEN}}
     secrets:
       SAML_GITHUB_TOKEN: ${{secrets.SAML_GITHUB_TOKEN}}
       SAML_GITHUB_USER: ${{secrets.SAML_GITHUB_USER}}
