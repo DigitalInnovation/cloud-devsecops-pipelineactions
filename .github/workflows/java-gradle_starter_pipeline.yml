@@ -51,6 +51,7 @@ env:
   Chart: helm-sample-java #Update based on the helm chart folder
   CLUSTER_NAMESPACE: sample-app
   PRISMA_URL: https://europe-west3.cloud.twistlock.com/eu-2-143543845
+  SP_TENANT_ID: bd5c6713-7399-4b31-be79-78f2d078e543
   
 jobs:
   pre-work-setup:
@@ -306,7 +307,7 @@ jobs:
         #azure_profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         
         # the below parameters are not Required if you are using PUBLISH Profile.
-        azure_client_id: ${{secrets.SP_CLIENT_ID}}
+        azure_client_id: ${{secrets.SP_CLIENTID}}
         azure_client_secret: ${{secrets.SP_PASSWORD}}
         subscription: ${{secrets.SUBSCRIPTION_ID}}
         azure_tenant_id: ${{env.SP_TENANT_ID}}
