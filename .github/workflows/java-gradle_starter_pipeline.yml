@@ -2,7 +2,7 @@ name: Starter Pipeline for Java Gradle Project using Github Packages
 
 on: push
   #push:
-    #branches: [ main ]
+    #branches: [ branch-java-gradle-sample ]
 
 ######  Please Make sure you have the secrets setup in ################
 
@@ -48,7 +48,8 @@ jobs:
       - name: == pre initialization and setting up Variables ======
         id: get_gh_registry
         run: |
-          GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          #GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          GH_REGISTRY_NAME_LOWER=ghcr.io/Cloud-DevSecOps-Pipeline-Java
           echo $GH_REGISTRY_NAME_LOWER
           echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
          
@@ -65,7 +66,7 @@ jobs:
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
-        ref: main
+        ref: branch-java-gradle-sample
              
     - name: ========== Build and push Build Artifacts to artifact Store ==========
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@latest
@@ -131,7 +132,7 @@ jobs:
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
-        ref: main
+        ref: branch-java-gradle-sample
 
     - name: ========== Run Code Quality Scan ==========
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@latest
@@ -190,7 +191,7 @@ jobs:
       with:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
-        ref: main
+        ref: branch-java-gradle-sample
     - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@latest
       with:
 # Set Falg to true if you want to run Dependency (SNYK) Scan,provide Name of the project Example: Test and Token should be created as GitHub secret
@@ -236,7 +237,7 @@ jobs:
         with:
           repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
           token: ${{ secrets.SAML_GITHUB_TOKEN }}
-          ref: main
+          ref: branch-java-gradle-sample
 
       - name: Deploy application 
         uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
@@ -276,7 +277,7 @@ jobs:
       with:
           repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
           token: ${{ secrets.SAML_GITHUB_TOKEN }}
-          ref: main
+          ref: branch-java-gradle-sample
      
     - name: 'Deploy to Azure WebApp'
       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
