@@ -36,7 +36,7 @@ on: push
 # NEW_RELIC_API_KEY
 # NEW_RELIC_ACCOUNT_ID
 # NEW_RELIC_APP_ID
-environment: Non-prod
+#environment: Non-prod
 
 # set GLOBAL environment variable to be used in the workflow and reference using ${{env.name_declared}}
 env:
@@ -64,7 +64,7 @@ jobs:
         id: get_gh_registry
         run: |
           #GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
-          GH_REGISTRY_NAME_LOWER=ghcr.io/digitalinnovation/ra_sample_java
+          GH_REGISTRY_NAME_LOWER=ghcr.io/digitalinnovation/cloud-devsecops-pipeline-java
           echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
          
 ##================================================================================================================================# 
@@ -72,7 +72,7 @@ jobs:
 
   Build_Test_and_Deploy_Package:
     runs-on: ubuntu-latest
-    #environment: Non-prod
+    environment: Non-prod
     needs: [pre-work-setup]
     steps:
     - name: ============ Checkout the repository Code ==========
@@ -137,7 +137,7 @@ jobs:
   Code_Quality_Scan:
     runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
     needs: Build_Test_and_Deploy_Package
-    #environment: Non-prod
+    environment: Non-prod
     continue-on-error: true
     steps:
     - name: ============ Checkout the repository Code ========== same as git-repo (get)
@@ -203,7 +203,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ pre-work-setup, Build_Test_and_Deploy_Package ]
     continue-on-error: true
-    #environment: Non-prod
+    environment: Non-prod
     steps:
     - uses: actions/checkout@v1\
       with:
@@ -248,7 +248,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ pre-work-setup, Run_appsec_scans ]
     # set the environment variable for job to use environement specific Secrets if configured.
-    #environment: Non-prod
+    environment: Non-prod
     continue-on-error: true
     steps:
       - name: Check out repository code
@@ -291,7 +291,7 @@ jobs:
   Deploy-webapp:
     runs-on: ubuntu-latest
     needs: [ pre-work-setup, Run_appsec_scans ]  # needs pre-work if you are referencing the output
-    #environment: Non-prod
+    environment: Non-prod
     steps:  
     - uses: actions/checkout@v2
       with:
