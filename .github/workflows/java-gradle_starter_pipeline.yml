@@ -56,7 +56,7 @@ jobs:
 
   Build_Test_and_Deploy_Package:
     runs-on: ubuntu-latest
-    enviornment: Non-prod
+    environment: Non-prod
     needs: [pre-work-setup]
     steps:
     - name: ============ Checkout the repository Code ==========
@@ -122,7 +122,7 @@ jobs:
   Code_Quality_Scan:
     runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
     needs: Build_Test_and_Deploy_Package
-    enviornment: Non-prod
+    environment: Non-prod
     continue-on-error: true
     steps:
     - name: ============ Checkout the repository Code ========== same as git-repo (get)
@@ -182,7 +182,7 @@ jobs:
   Run_appsec_scans:
     runs-on: ubuntu-latest
     needs: [pre-work-setup, Build_Test_and_Deploy_Package]
-    enviornment: Non-prod
+    environment: Non-prod
     continue-on-error: true
     steps:
     - uses: actions/checkout@v3
@@ -243,9 +243,9 @@ jobs:
           # Flag to verify if this is helm deployment
           is_helm_deployment: true
  # Deployment environment name. Supported values: dev/release/prod 
-          environment: ${{env.enviornment}}
+          environment: ${{env.environment}}
             # Release name of the helm application
-          application_release_name: ${{env.APPLICATION_NAME}}-${{env.enviornment}}
+          application_release_name: ${{env.APPLICATION_NAME}}-${{env.environment}}
             # Kubeconfig for AKS cluster connection, should be created as GitHub secret
           kube_config: ${{ secrets.KUBE_CONFIG }}            
 # provide relative path,Name of the values file to use to help helm chart folder

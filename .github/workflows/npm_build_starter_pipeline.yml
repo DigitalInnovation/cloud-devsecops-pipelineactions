@@ -74,7 +74,7 @@ jobs:
 
   Build_Test_and_Publish_Package:
     runs-on: ubuntu-latest
-    enviornment: Non-prod
+    environment: Non-prod
     needs: Pre-Work
     steps:
     - name: ============ Checkout the repository Code ==========
@@ -140,7 +140,7 @@ jobs:
   Code_Quality_Scan:
     runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
     needs: Build_Test_and_Publish_Package 
-    enviornment: Non-prod
+    environment: Non-prod
     continue-on-error: true
     steps:
     - name: ============ Checkout the repository Code ========== same as git-repo (get)
@@ -169,7 +169,7 @@ jobs:
 
   Build_Push_Container_image:
     runs-on: ubuntu-latest 
-    enviornment: Non-prod
+    environment: Non-prod
     needs: [Pre-Work, Build_Test_and_Publish_Package]
     steps:
     - name: ============ Checkout the repository Code ========== same as git-repo (get)
@@ -204,7 +204,7 @@ jobs:
   Run_appsec_scans:
     runs-on: ubuntu-latest
     continue-on-error: true
-    enviornment: Non-prod
+    environment: Non-prod
     needs: [Pre-Work, Build_Push_Container_image ]
     steps:
     - uses: actions/checkout@v3
