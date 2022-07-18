@@ -153,9 +153,9 @@ jobs:
         build_tool: gradle
         build_file_name: gradlew
         build_file_path: . 
-        cq_host_url: ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME }} 
-        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY }} 
+        cq_host_url: ${{env.SONAR_CLOUD_URL_JAVA }}
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_JAVA }} 
+        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_JAVA }} 
         cq_token: ${{ secrets.SONAR_TOKEN }} 
         cq_scan_arguments: -Dsonar.organization=digitalinnovation 
           
@@ -257,9 +257,9 @@ jobs:
           # Flag to verify if this is helm deployment
           is_helm_deployment: true
  # Deployment environment name. Supported values: dev/release/prod 
-          environment: ${{env.environment}}
+          environment: ${{env.environnment}}
             # Release name of the helm application
-          application_release_name: ${{env.APPLICATION_NAME}}-${{env.environment}}
+          application_release_name: ${{env.APPLICATION_NAME}}-${{env.environnment}}
             # Kubeconfig for AKS cluster connection, should be created as GitHub secret
           kube_config: ${{ secrets.KUBE_CONFIG }}            
 # provide relative path,Name of the values file to use to help helm chart folder
