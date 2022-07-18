@@ -1,5 +1,5 @@
 name: Starter Pipeline for Java Maven Project using Github Packages
-on: pull_request
+on: push
   #push:
     #branches: [ main ]
   
@@ -36,7 +36,7 @@ on: pull_request
 # NEW_RELIC_API_KEY
 # NEW_RELIC_ACCOUNT_ID
 # NEW_RELIC_APP_ID
-
+environment: Non-prod
 
 # set GLOBAL environment variable to be used in the workflow and reference using ${{env.name_declared}}
 env:
@@ -51,6 +51,7 @@ env:
   CLUSTER_NAMESPACE: sample-app
   PRISMA_URL: https://europe-west3.cloud.twistlock.com/eu-2-143543845
   SP_TENANT_ID: bd5c6713-7399-4b31-be79-78f2d078e543
+  
   
 jobs:
   pre-work-setup:
@@ -71,7 +72,7 @@ jobs:
 
   Build_Test_and_Deploy_Package:
     runs-on: ubuntu-latest
-    environment: Non-prod
+    #environment: Non-prod
     needs: [pre-work-setup]
     steps:
     - name: ============ Checkout the repository Code ==========
@@ -115,8 +116,7 @@ jobs:
 # Ignore all  parametes with cr_* if build_and_push_container_image is false [ you can also invoke this separately]
 # Provide the Dockerfile name and its relative path to build the image
         cr_dockerfile_name: Dockerfile 
-        cr_dockerfile_path: ./ 
-        cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUb_TOKEN}}         
+        cr_dockerfile_path: ./          
 # Provide the information of the Projects ImageName, Imagetag, 
 # Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry you can setup secrets to reference here
 # ${{ secrets.REGISTRY_SERVER }}  ${{ secrets.REGISTRY_USER }} ${{ secrets.REGISTRY_PASSWORD }} 
@@ -137,7 +137,7 @@ jobs:
   Code_Quality_Scan:
     runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
     needs: Build_Test_and_Deploy_Package
-    environment: Non-prod
+    #environment: Non-prod
     continue-on-error: true
     steps:
     - name: ============ Checkout the repository Code ========== same as git-repo (get)
@@ -157,9 +157,9 @@ jobs:
         settings_file_name: settings.xml 
         settings_file_path: . 
         cq_host_url: ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME }} 
-        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY }} 
-        cq_token: ${{ secrets.SONAR_TOKEN }} 
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_JAVA }} 
+        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_JAVA }} 
+        cq_token: ${{ secrets.SONAR_TOKEN_JAVA }} 
         cq_scan_arguments: -Dsonar.organization=digitalinnovation 
           
         
@@ -203,7 +203,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ pre-work-setup, Build_Test_and_Deploy_Package ]
     continue-on-error: true
-    environment: Non-prod
+    #environment: Non-prod
     steps:
     - uses: actions/checkout@v1\
       with:
@@ -248,7 +248,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ pre-work-setup, Run_appsec_scans ]
     # set the environment variable for job to use environement specific Secrets if configured.
-    environment: Non-prod
+    #environment: Non-prod
     continue-on-error: true
     steps:
       - name: Check out repository code
@@ -291,7 +291,7 @@ jobs:
   Deploy-webapp:
     runs-on: ubuntu-latest
     needs: [ pre-work-setup, Run_appsec_scans ]  # needs pre-work if you are referencing the output
-    environment: Non-prod
+    #environment: Non-prod
     steps:  
     - uses: actions/checkout@v2
       with:
@@ -314,7 +314,7 @@ jobs:
         #azure_profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         
         # the below parameters are not Required if you are using PUBLISH Profile.
-        azure_client_id: ${{secrets.SP_CLIENT_ID}}
+        azure_client_id: ${{secrets.SP_CLIENTID}}
         azure_client_secret: ${{secrets.SP_PASSWORD}}
         subscription: ${{secrets.SUBSCRIPTION_ID}}
         azure_tenant_id: ${{env.SP_TENANT_ID}}
