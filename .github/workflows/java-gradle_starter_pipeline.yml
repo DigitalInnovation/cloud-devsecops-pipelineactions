@@ -38,6 +38,19 @@ on: push
 # NEW_RELIC_ACCOUNT_ID
 # NEW_RELIC_APP_ID
 
+
+# set GLOBAL environment variable to be used in the workflow and reference using ${{env.name_declared}}
+env:
+  # CI CD PARAMETERS
+  APPLICATION_NAME: java-gradlestarter
+  enviornment: dev
+  SONAR_CLOUD_URL: https://sonarcloud.io
+  GH_REGISTRY: ghcr.io/${{github.repository}} 
+  CONTAINER_IMAGE_NAME: java-gradlestarter-webapp-sample
+  image_tag: ${{ github.run_number }}
+  Chart: helm-sample-java #Update based on the helm chart folder
+  CLUSTER_NAMESPACE: sample-app
+  PRISMA_URL: https://europe-west3.cloud.twistlock.com/eu-2-143543845
   
 jobs:
   pre-work-setup:
@@ -103,7 +116,7 @@ jobs:
 # Provide the Dockerfile name and its relative path to build the image
         cr_dockerfile_name: Dockerfile 
         cr_dockerfile_path: ./ 
-        cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUb_TOKEN}}
+        cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUB_TOKEN}}
 # Provide the information of the Projects ImageName, Imagetag, 
 # Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry you can setup secrets to reference here
 # ${{ secrets.REGISTRY_SERVER }}  ${{ secrets.REGISTRY_USER }} ${{ secrets.REGISTRY_PASSWORD }} 
