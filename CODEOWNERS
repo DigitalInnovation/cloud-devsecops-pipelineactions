@@ -1,12 +1,11 @@
 # directory at the root of the repository and any of its
 # subdirectories.
-#*.md @gopinath-velayudhan-mns @GopikaV24
 *.md @GopikaV24
-mkdocs.yml @gopinath-velayudhan-mns @prabhu-mns
-catalog-info.yaml @gopinath-velayudhan-mns @prabhu-mns
-docs/index.md @gopinath-velayudhan-mns @prabhu-mns
-docs/semantic_versioning.md @GopikaV24
-.github/* @GopikaV24 @gopinath-velayudhan-mns
+mkdocs.yml @gopinath-velayudhan-mns
+catalog-info.yaml @gopinath-velayudhan-mns
+docs/index.md @gopinath-velayudhan-mns
+docs/semantic_versioning.md
+.github/* @GopikaV24
 workflows/CD/* @gopinath-velayudhan-mns
 workflows/CI/* @gopinath-velayudhan-mns
 workflows/appsec/* @gopinath-velayudhan-mns
