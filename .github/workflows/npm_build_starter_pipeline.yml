@@ -1,5 +1,13 @@
 name: CICD-NODE-WEBAPP Deployment Starter Pipeline
-on: pull_request
+on: 
+ pull_request:
+    branches: [ testing-pipeline ]
+    types: [assigned, opened, synchronize, reopened]
+    paths-ignore:
+      - docs/**
+      - "**.md"
+      - mkdocs.yml
+      - catalog-info.yaml
 
 # #####  Please Make sure you have the secrets setup in ################
 
@@ -309,7 +317,7 @@ jobs:
         #azure_profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         
         # the below parameters are not Required if you are using PUBLISH Profile.
-        azure_client_id: ${{secrets.SP_CLIENT_ID}}
+        azure_client_id: ${{secrets.SP_CLIENTID}}
         azure_client_secret: ${{secrets.SP_PASSWORD}}
         subscription: ${{secrets.SUBSCRIPTION_ID}}
         azure_tenant_id: ${{env.SP_TENANT_ID}}

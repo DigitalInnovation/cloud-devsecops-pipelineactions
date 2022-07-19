@@ -1,6 +1,16 @@
 name: Starter Pipeline for Java Gradle Project using Github Packages
 
-on: pull_request
+on: 
+ pull_request:
+    branches: [ testing-pipeline ]
+    types: [assigned, opened, synchronize, reopened]
+    paths-ignore:
+      - docs/**
+      - "**.md"
+      - mkdocs.yml
+      - catalog-info.yaml
+
+   
   #push:
     #branches: [ branch-java-gradle-sample ]
 
