@@ -1,6 +1,7 @@
 # directory at the root of the repository and any of its
 # subdirectories.
-*.md @gopinath-velayudhan-mns @GopikaV24
+#*.md @gopinath-velayudhan-mns @GopikaV24
+*.md @GopikaV24
 mkdocs.yml @gopinath-velayudhan-mns @prabhu-mns
 catalog-info.yaml @gopinath-velayudhan-mns @prabhu-mns
 docs/index.md @gopinath-velayudhan-mns @prabhu-mns
