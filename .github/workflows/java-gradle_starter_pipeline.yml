@@ -1,14 +1,6 @@
 name: Starter Pipeline for Java Gradle Project using Github Packages
 
-on: 
- pull_request:
-    branches: [ testing-pipeline ]
-    types: [assigned, opened, synchronize, reopened]
-    paths-ignore:
-      - docs/**
-      #- "**.md"
-      - mkdocs.yml
-      - catalog-info.yaml
+on: push
 
    
   #push:
@@ -143,32 +135,6 @@ jobs:
         
 # ##================================================================================================================================#  
 # # Code Quality Scan Action - SonarCloud is the Recommended Tool        
-  
-  Code_Quality_Scan:
-    runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
-    needs: Build_Test_and_Deploy_Package
-    environment: Non-prod
-    continue-on-error: true
-    steps:
-    - name: ============ Checkout the repository Code ========== same as git-repo (get)
-      uses: actions/checkout@v2
-      with:
-        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-        token: ${{ secrets.SAML_GITHUB_TOKEN }}
-        ref: branch-java-gradle-sample
-
-    - name: ========== Run Code Quality Scan ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@latest
-      with:
-# Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
-        build_tool: gradle
-        build_file_name: gradlew
-        build_file_path: . 
-        cq_host_url: ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: cloud-devsecops-pipelineactions
-        cq_project_key: DigitalInnovation_cloud-devsecops-pipelineactions
-        cq_token: ${{ secrets.SONAR_TOKEN }} 
-        cq_scan_arguments: -Dsonar.organization=digitalinnovation 
           
         
 ##================================================================================================================================#  
@@ -223,15 +189,15 @@ jobs:
         dependency_scan_token: ${{ secrets.SNYK_API_TOKEN }}
         
 # Set Falg to true if you want to run SAST (Fortify) Scan, provide Release ID,Scanner API Key and Scanner API secret should be created as secret
-        run_sast_scan: false
-        sast_release_id: ${{ secrets.FORTIFY_RELEASE_ID }}
-        sast_api_key: ${{ secrets.FORTIFY_CLIENT_ID}}
-        sast_api_secret: ${{ secrets.FORTIFY_CLIENT_SECRET}}
+        run_sast_scan: true
+        sast_release_id: 103533
+        sast_api_key: ${{ secrets.FOD_ID}}
+        sast_api_secret: ${{ secrets.FOD_SECRET}}
         # flag download the sast scan result, if run_sast_scan: true
         download_sast_scan_result: true
         
 # Set Falg to true if you want to run Container (PRISMA) Scan,provide  Scanner Console URL,username and password should be created as GitHub secret
-        run_container_scan: true
+        run_container_scan: false
         container_scan_url: ${{ env.PRISMA_URL }}
         container_scan_user: ${{ secrets.PRISMA_ACCESS_KEY_ID }}
         container_scan_password: ${{ secrets.PRISMA_SECRET_KEY }} 
@@ -246,105 +212,3 @@ jobs:
 
 # ##================================================================================================================================# 
 
-# # Deployment - use this if you are using helm to deploy your project
-
-  Helm_deployment:
-    runs-on: ubuntu-latest
-    needs: [pre-work-setup, Run_appsec_scans]
-    # set the environment variable for job to use environement specific Secrets if configured.
-    environment: Non-prod
-    continue-on-error: true
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v2
-        with:
-          repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-          token: ${{ secrets.SAML_GITHUB_TOKEN }}
-          ref: branch-java-gradle-sample
-
-      - name: Deploy application 
-        uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
-        with:
-          # Flag to verify if this is helm deployment
-          is_helm_deployment: true
- # Deployment environment name. Supported values: dev/release/prod 
-          environment: dev
-            # Release name of the helm application
-          application_release_name: ${{env.APPLICATION_NAME}}-dev
-            # Kubeconfig for AKS cluster connection, should be created as GitHub secret
-          kube_config: ${{ secrets.KUBE_CONFIG }}            
-# provide relative path,Name of the values file to use to help helm chart folder
-          helm_chart_path: ${{env.Chart}}
-          helm_values_file: Values.yaml
-# Provide Image name,tag,Namespace of the cluster to deploy
-          image_name: ${{env.CONTAINER_IMAGE_NAME}}
-          image_tag: ${{ github.run_number }} 
-          cluster_namespace: ${{ env.CLUSTER_NAMESPACE }}  #  sample-app
-# Flag to create new namespace if not already existing
-          create_namespace: false
-# Additonal helm arguments eg: --set 'dockerImage=${{env.CONTAINER_IMAGE_NAME}} and Flag to run as dry run
-          helm_argument: "--set 'image.repository=${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}/${{env.CONTAINER_IMAGE_NAME}}:${{ github.run_number }}'"
-          dry_run: false
-
-
-##================================================================================================================================# 
-####   Sample Webapp Deployment require the webapp name, and the publish profile along with the path to the pacage or source path.       
-            
-# # Deploy the webapp to the webapp layer created by Bright or Manual. 
-  Deploy-webapp:
-    runs-on: ubuntu-latest
-    needs: [ pre-work-setup, Run_appsec_scans ]  # needs pre-work if you are referencing the output
-    environment: Non-prod
-    steps:  
-    - uses: actions/checkout@v2
-      with:
-          repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
-          token: ${{ secrets.SAML_GITHUB_TOKEN }}
-          ref: branch-java-gradle-sample
-     
-    - name: 'Deploy to Azure WebApp'
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
-      with:
-        is_azure_webapp_deployment: true
-        environment: dev # this is app specific variable if you need   
-        application_release_name: 2.10
-        webapp_name: ${{secrets.AZURE_WEBAPP_NAME}}
-        
-        #source_path: .    # you can reference source or container image:tag
-        image_name: ${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}/${{env.CONTAINER_IMAGE_NAME}}
-        image_tag: ${{ github.run_number }}
-
-        #azure_profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-        
-        # the below parameters are not Required if you are using PUBLISH Profile.
-        azure_client_id: ${{secrets.SP_CLIENTID}}
-        azure_client_secret: ${{secrets.SP_PASSWORD}}
-        subscription: ${{secrets.SUBSCRIPTION_ID}}
-        azure_tenant_id: ${{env.SP_TENANT_ID}}
-
-
-##================================================================================================================================# 
-
-
-          
-#Observability  
-  NewRelic_Deploymentmarker:
-    runs-on: ubuntu-latest
-    needs: Helm_deployment
-    environment: Non-prod
-    continue-on-error: true
-    steps:
-    - name: New Relic deployment marker
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@latest
-      with: 
-        set_newRelic_Deployment_marker: true
- # provide Newrelic API Key,Account ID,Application ID and Newrelic user should be created as GitHub Secret
-        newRelic_key: ${{secrets.NEW_RELIC_API_KEY}} 
-        newRelic_accountId: ${{secrets.NEW_RELIC_ACCOUNT_ID}}
-        newRelic_applicationId: ${{secrets.NEW_RELIC_APP_ID}}
-        newRelic_user: ${{ github.actor }}
-        git_commit_id: ${{ github.sha }}
-        comment: " comments "  
-
-        
-# ##============================END OF PIPELINE WORKFLOW=================================================================================# 
