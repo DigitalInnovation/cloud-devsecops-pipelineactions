@@ -1,6 +1,6 @@
 name: Starter Pipeline for Java Gradle Project using Github Packages
 
-on: push
+on: pull_request
   #push:
     #branches: [ branch-java-gradle-sample ]
 
@@ -258,9 +258,9 @@ jobs:
           # Flag to verify if this is helm deployment
           is_helm_deployment: true
  # Deployment environment name. Supported values: dev/release/prod 
-          environment: ${{env.environnment}}
+          environment: dev
             # Release name of the helm application
-          application_release_name: ${{env.APPLICATION_NAME}}-${{env.environnment}}
+          application_release_name: ${{env.APPLICATION_NAME}}-dev
             # Kubeconfig for AKS cluster connection, should be created as GitHub secret
           kube_config: ${{ secrets.KUBE_CONFIG }}            
 # provide relative path,Name of the values file to use to help helm chart folder
