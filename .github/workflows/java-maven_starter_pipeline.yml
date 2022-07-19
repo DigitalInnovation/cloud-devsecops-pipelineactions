@@ -113,9 +113,9 @@ jobs:
 # Ignore next 5 parameters (with cq_*) if run_code_quality_analysis is false
 # If the fag is true, Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
         cq_host_url:  ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_JAVA }}
-        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_JAVA }} 
-        cq_token: ${{ secrets.SONAR_TOKEN_JAVA }}
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_MAVEN }}
+        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_MAVEN }} 
+        cq_token: ${{ secrets.SONAR_TOKEN }}
         cq_scan_arguments: -Dsonar.organization=digitalinnovation 
 
 # Flag to include Creation of Container Image and Push to Registry       
@@ -165,9 +165,9 @@ jobs:
         settings_file_name: settings.xml 
         settings_file_path: . 
         cq_host_url: ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_JAVA }} 
-        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_JAVA }} 
-        cq_token: ${{ secrets.SONAR_TOKEN_JAVA }} 
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_MAVEN }} 
+        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_MAVEN }} 
+        cq_token: ${{ secrets.SONAR_TOKEN }} 
         cq_scan_arguments: -Dsonar.organization=digitalinnovation 
           
         
