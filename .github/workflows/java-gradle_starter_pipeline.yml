@@ -165,9 +165,9 @@ jobs:
         build_file_name: gradlew
         build_file_path: . 
         cq_host_url: ${{env.SONAR_CLOUD_URL }}
-        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_JAVA }} 
-        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_JAVA }} 
-        cq_token: ${{ secrets.SONAR_TOKEN_JAVA }} 
+        cq_project_name: cloud-devsecops-pipelineactions
+        cq_project_key: DigitalInnovation_cloud-devsecops-pipelineactions
+        cq_token: ${{ secrets.SONAR_TOKEN }} 
         cq_scan_arguments: -Dsonar.organization=digitalinnovation 
           
         
