@@ -73,7 +73,7 @@ jobs:
       - name: Removing New composite config Pull branch
         run: |
           curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/branch-pull
-      - id: pull request branch name
+      - id: pull
         run: |
              pull_branch=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
              echo "Pull request Branch: $pull_branch"
@@ -81,8 +81,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           ref: ${{ steps.pull.outputs.pull_branch}}
-      - id: Creating new branch and commit
-        run: |
+      - run: |
           tag=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/DigitalInnovation/cloud-devsecops-pipelineactions/releases/latest" | jq -r '.tag_name')
           echo "CURRENT TAG: $tag"
           echo "::set-output name=old_version::$tag"
