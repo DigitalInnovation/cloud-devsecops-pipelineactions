@@ -1,5 +1,5 @@
 # Cloud DevSecOps reusable actions repository1212
-Welcome to the DevSecOps reusable actions repository containing sample reusable composite actions to help you get up and running quickly using M&S standards and best practices.
+Welcome to the DevSecOps reusable actions repository containing sample reusable composite actions to help you get up and running quickly using M&S standards and best practices.12
 
 ![Public repository attention](https://img.icons8.com/ios/32/000000/error--v1.png)
 **Please note** this repository is **Public** and as such no sensitive data should be stored. 
