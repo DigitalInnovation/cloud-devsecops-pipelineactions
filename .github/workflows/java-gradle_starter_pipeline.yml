@@ -64,7 +64,51 @@ env:
   SP_TENANT_ID: bd5c6713-7399-4b31-be79-78f2d078e543
   
 jobs:
+  # TO get the changes from the pull request branch, below job will create a new branch from pull request branch and replace @<version> with @new branch
+  pre-composite-action-setup:
+    runs-on: ubuntu-latest
+    outputs: 
+      new-branch: ${{ steps.check.outputs.new-branch }}
+    steps:
+      - name: Removing New composite config Pull branch
+        run: |
+          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/branch-pull
+      - id: pull_request branch name
+        run: |
+             pull_branch=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
+             echo "Pull request Branch: $pull_branch"
+             echo "::set-output name=pull_branch::$pull_branch"
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.pull.outputs.pull_branch}}
+      - id: Creating new branch and commit
+        run: |
+          tag=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/DigitalInnovation/cloud-devsecops-pipelineactions/releases/latest" | jq -r '.tag_name')
+          echo "CURRENT TAG: $tag"
+          echo "::set-output name=old_version::$tag"
+          b=(${tag//"-"/ })
+          t=${b[0]}
+          git config --global user.name 'Y9886988'
+          git config --global user.email 'Y9886988@mnscorp.onmicrosoft.com'
+          git clone https://Y9886988:${{secrets.TOKEN}}@github.com/DigitalInnovation/cloud-devsecops-pipelineactions.git
+          cd cloud-devsecops-pipelineactions
+          git checkout ${{ steps.pull.outputs.pull_branch}}
+          git checkout -b gradle-pull-branch
+          echo "***************Printing $t mentioned places****************"
+          grep -rn "@$t" *  
+          echo "******************Replacing $t with gradle-pull-branch in all action.yml files*******************"
+          find ./ -type f -exec sed -i -e "s|@$t|@gradle-pull-branch|g" {} \;
+          echo "Replacing $t with gradle-pull-branch in all action.yml files"
+          echo "******************After replacing new version, Printing  mentioned places**************************"
+          grep -rn "@gradle-pull-branch" *
+          echo "*********************Pushing changes into the main branch***********************"
+          git add .
+          git commit -am "Replacing $t with gradle-pull-branch in all action.yml files"
+          git push origin branch-pull
+      
+
   pre-work-setup:
+    needs: [pre-composite-action-setup]
     runs-on: ubuntu-latest
     outputs:
       GH_REGISTRY_SERVER_LOWERCASE: ${{ steps.get_gh_registry.outputs.GH_REGISTRY_LOWER }}
@@ -93,7 +137,7 @@ jobs:
         ref: branch-java-gradle-sample
              
     - name: ========== Build and push Build Artifacts to artifact Store ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@gradle-pull-branch
       with:
        
 # provide the project Build tool,  build file path and its relative location
@@ -158,7 +202,7 @@ jobs:
         ref: branch-java-gradle-sample
 
     - name: ========== Run Code Quality Scan ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@gradle-pull-branch
       with:
 # Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
         build_tool: gradle
@@ -183,7 +227,7 @@ jobs:
 #     - uses: actions/checkout@v3
 #     - name: =========  Build and push image to Container Registry. ===========
 #  # you can also add this as part of the build workflow by setting the build_and_push_container_image: true
-#       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI/push_image@latest
+#       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI/push_image@gradle-pull-branch
 #       with:
         
 #  # Provide the Dockerfile name and its relative path to build the image
@@ -215,7 +259,7 @@ jobs:
         repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
         token: ${{ secrets.SAML_GITHUB_TOKEN }}
         ref: branch-java-gradle-sample
-    - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@latest
+    - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@gradle-pull-branch
       with:
 # Set Falg to true if you want to run Dependency (SNYK) Scan,provide Name of the project Example: Test and Token should be created as GitHub secret
         application_name: ${{env.APPLICATION_NAME}}  # Name of your Application
@@ -263,7 +307,7 @@ jobs:
           ref: branch-java-gradle-sample
 
       - name: Deploy application 
-        uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
+        uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@gradle-pull-branch
         with:
           # Flag to verify if this is helm deployment
           is_helm_deployment: true
@@ -303,7 +347,7 @@ jobs:
           ref: branch-java-gradle-sample
      
     - name: 'Deploy to Azure WebApp'
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@gradle-pull-branch
       with:
         is_azure_webapp_deployment: true
         environment: dev # this is app specific variable if you need   
@@ -335,7 +379,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: New Relic deployment marker
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@gradle-pull-branch
       with: 
         set_newRelic_Deployment_marker: true
  # provide Newrelic API Key,Account ID,Application ID and Newrelic user should be created as GitHub Secret
