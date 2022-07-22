@@ -72,7 +72,7 @@ jobs:
     steps:
       - name: Removing New composite config Pull branch
         run: |
-          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/branch-pull
+          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.SAML_GITHUB_TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/branch-pull
       - id: pull
         run: |
              pull_branch=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
@@ -86,7 +86,8 @@ jobs:
           echo "CURRENT TAG: $tag"
           echo "::set-output name=old_version::$tag"
           b=(${tag//"-"/ })
-          t=${b[0]}
+          #t=${b[0]}
+          t=v1.0.22
           git config --global user.name 'Y9886988'
           git config --global user.email 'Y9886988@mnscorp.onmicrosoft.com'
           git clone https://Y9886988:${{secrets.TOKEN}}@github.com/DigitalInnovation/cloud-devsecops-pipelineactions.git
