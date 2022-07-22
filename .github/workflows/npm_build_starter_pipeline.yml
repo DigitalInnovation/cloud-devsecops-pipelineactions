@@ -296,7 +296,7 @@ jobs:
         build_tool: npm
         
 # Set Flag to true if you want to run SAST (Fortify) Scan, provide Release ID,Scanner API Key and Scanner API secret should be created as secret
-        run_sast_scan: false
+        run_sast_scan: true
         sast_release_id: ${{ secrets.FORTIFY_RELEASE_ID }}
         sast_api_key: ${{ secrets.FORTIFY_CLIENT_ID}}
         sast_api_secret: ${{ secrets.FORTIFY_CLIENT_SECRET}}
