@@ -1,7 +1,7 @@
 name: CICD-NODE-WEBAPP Deployment Starter Pipeline
 on: 
  pull_request:
-    branches: [ testing-pipeline ]
+    branches: [ main ]
     types: [assigned, opened, synchronize, reopened]
     paths-ignore:
       - docs/**

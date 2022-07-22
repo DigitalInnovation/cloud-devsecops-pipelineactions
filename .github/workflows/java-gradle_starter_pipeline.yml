@@ -2,7 +2,7 @@ name: Starter Pipeline for Java Gradle Project using Github Packages
 
 on: 
  pull_request:
-    branches: [ testing-pipeline ]
+    branches: [ main ]
     types: [assigned, opened, synchronize, reopened]
     paths-ignore:
       - docs/**
