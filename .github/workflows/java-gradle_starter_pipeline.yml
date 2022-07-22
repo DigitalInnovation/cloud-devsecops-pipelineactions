@@ -104,7 +104,7 @@ jobs:
           echo "*********************Pushing changes into the main branch***********************"
           git add .
           git commit -am "Replacing $t with gradle-pull-branch in all action.yml files"
-          git push origin branch-pull
+          git push origin gradle-pull-branch
       
 
   pre-work-setup:
