@@ -42,7 +42,7 @@ runs:
       shell: bash
       
     - name: ========== Run Code Quality Scan for Maven project ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality/maven-cq@v1.0.24
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality/maven-cq@gradle-pull-branch
       with:
         build_file_path: ${{ inputs.build_file_path }}
         build_file_name: ${{ inputs.build_file_name }}
@@ -59,7 +59,7 @@ runs:
       
     
     - name: ========== Run Code Quality Scan for Maven project ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality/gradle-cq@v1.0.24
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality/gradle-cq@gradle-pull-branch
       with:
         build_file_path: ${{ inputs.build_file_path }}
         build_file_name: ${{ inputs.build_file_name }}
