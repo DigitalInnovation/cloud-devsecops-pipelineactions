@@ -66,6 +66,7 @@ env:
 jobs:
   # TO get the changes from the pull request branch, below job will create a new branch from pull request branch and replace @<version> with @new branch
   pre-composite-action-setup:
+    environment: Non-prod
     runs-on: ubuntu-latest
     outputs: 
       new-branch: ${{ steps.check.outputs.new-branch }}
