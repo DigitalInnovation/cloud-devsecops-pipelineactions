@@ -1,0 +1,15 @@
+# directory at the root of the repository and any of its
+# subdirectories.
+*.md @gopinath-velayudhan-mns
+mkdocs.yml @gopinath-velayudhan-mns
+catalog-info.yaml @gopinath-velayudhan-mns
+docs/index.md @gopinath-velayudhan-mns
+docs/semantic_versioning.md
+.github/* @GopikaV24
+workflows/CD/* @gopinath-velayudhan-mns
+workflows/CI/* @gopinath-velayudhan-mns
+workflows/appsec/* @gopinath-velayudhan-mns
+workflows/codequality/* @gopinath-velayudhan-mns
+workflows/insight/* @akhilgnair24
+workflows/observability/* @gopinath-velayudhan-mns
+workflows/vault/getakvsecrets/* @gopinath-velayudhan-mns

@@ -4,8 +4,6 @@ changelog:
   exclude:
     labels:
       - ignore-for-release
-    authors:
-      - octocat
   categories:
     - title: Breaking Changes 🛠
       labels:
@@ -22,4 +20,7 @@ changelog:
         - enhancement
     - title: Updating Documentation
       labels:
-        -  documentation
+        - documentation
+    - title: Other Changes
+      labels:
+        - "*"

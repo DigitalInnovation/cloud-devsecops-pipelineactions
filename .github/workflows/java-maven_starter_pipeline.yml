@@ -1,0 +1,401 @@
+name: Starter Pipeline for Java Maven Project using Github Packages
+on: 
+ pull_request:
+    branches: [ testing-pipeline ]
+    types: [assigned, opened, synchronize, reopened]
+    paths-ignore:
+      - docs/**
+      - "**.md"
+      - mkdocs.yml
+      - catalog-info.yaml
+      - .github/workflows/semantic_versioning.yml
+      - .github/release.yml
+  #push:
+    #branches: [ main ]
+  
+######  Please Make sure you have the secrets setup in ################
+
+#  SAML_GITHUB_TOKEN --> PAT of Y account to connect to repository [required]
+#  SAML_GITHUB_USER --> Y account user name, [required] to authenticate github artifacts
+
+#  #####Secrets for running Code Quality#####
+#  SONAR_PROJECT_NAME
+#  SONAR_PROJECT_KEY
+#  SONAR_TOKEN
+
+#  secrets used for APP-SEC scan 
+# SNYK_API_TOKEN
+
+# FORTIFY_RELEASE_ID
+# FORTIFY_CLIENT_ID
+# FORTIFY_CLIENT_SECRET
+
+# PRISMA_URL
+# PRISMA_ACCESS_KEY_ID 
+# PRISMA_SECRET_KEY
+
+#### Secrets for webapp Deployment
+# AZURE_WEBAPP_NAME
+# AZURE_WEBAPP_PUBLISH_PROFILE
+
+#### Secrets for Helm Deployment
+# KUBE_CONFIG
+
+# Secretes for setting up New relic Deployment Marker and Insights
+# The starter script uses the secrect under environment : Non-prod.
+# NEW_RELIC_API_KEY
+# NEW_RELIC_ACCOUNT_ID
+# NEW_RELIC_APP_ID
+#environment: Non-prod
+
+# set GLOBAL environment variable to be used in the workflow and reference using ${{env.name_declared}}
+env:
+  # CI CD PARAMETERS
+  APPLICATION_NAME: java-mvnstarter
+  environment: Non-prod
+  SONAR_CLOUD_URL: https://sonarcloud.io
+  GH_REGISTRY: ghcr.io/${{github.repository}} 
+  CONTAINER_IMAGE_NAME: java-mvnstarter-webapp-sample
+  image_tag: ${{ github.run_number }}
+  Chart: helm-sample-java #Update based on the helm chart folder
+  CLUSTER_NAMESPACE: sample-app
+  PRISMA_URL: https://europe-west3.cloud.twistlock.com/eu-2-143543845
+  SP_TENANT_ID: bd5c6713-7399-4b31-be79-78f2d078e543
+  
+  
+jobs:
+    # TO get the changes from the pull request branch, below job will create a new branch from pull request branch and replace @<version> with @new branch
+  pre-composite-action-setup:
+    environment: Non-prod
+    runs-on: ubuntu-latest
+    outputs: 
+      new-branch: ${{ steps.check.outputs.new-branch }}
+    steps:
+      - name: Removing New composite config Pull branch
+        run: |
+          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.SAML_GITHUB_TOKEN}}" https://api.github.com/repos/DigitalInnovation/cloud-devsecops-pipelineactions/git/refs/heads/maven-pull-branch
+      - id: pull
+        run: |
+             pull_branch=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
+             echo "Pull request Branch: $pull_branch"
+             echo "::set-output name=pull_branch::$pull_branch"
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.pull.outputs.pull_branch}}
+      - run: |
+          tag=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/DigitalInnovation/cloud-devsecops-pipelineactions/releases/latest" | jq -r '.tag_name')
+          echo "CURRENT TAG: $tag"
+          echo "::set-output name=old_version::$tag"
+          b=(${tag//"-"/ })
+          t=${b[0]}
+          #t=v1.0.22
+          git config --global user.name 'Y9886988'
+          git config --global user.email 'Y9886988@mnscorp.onmicrosoft.com'
+          git clone https://Y9886988:${{secrets.SAML_GITHUB_TOKEN}}@github.com/DigitalInnovation/cloud-devsecops-pipelineactions.git
+          cd cloud-devsecops-pipelineactions
+          git checkout ${{ steps.pull.outputs.pull_branch}}
+          git checkout -b maven-pull-branch
+          echo "***************Printing $t mentioned places****************"
+          grep -rn "@$t" *  
+          echo "******************Replacing $t with maven-pull-branch in all action.yml files*******************"
+          find ./ -type f -exec sed -i -e "s|@$t|@maven-pull-branch|g" {} \;
+          echo "Replacing $t with maven-pull-branch in all action.yml files"
+          echo "******************After replacing new version, Printing  mentioned places**************************"
+          grep -rn "@maven-pull-branch" *
+          echo "*********************Pushing changes into the main branch***********************"
+          git add .
+          git commit -am "Replacing $t with maven-pull-branch in all action.yml files"
+          git push origin maven-pull-branch
+
+
+  pre-work-setup:
+    needs: [pre-composite-action-setup]
+    runs-on: ubuntu-latest
+    outputs:
+      GH_REGISTRY_SERVER_LOWERCASE: ${{ steps.get_gh_registry.outputs.GH_REGISTRY_LOWER }}
+      
+    steps:
+      - name: == pre initialization and setting up Variables ======
+        id: get_gh_registry
+        run: |
+          #GH_REGISTRY_NAME_LOWER=ghcr.io/${GITHUB_REPOSITORY,,}
+          GH_REGISTRY_NAME_LOWER=ghcr.io/digitalinnovation/cloud-devsecops-pipeline-java
+          echo "::set-output name=GH_REGISTRY_LOWER::$GH_REGISTRY_NAME_LOWER"
+         
+##================================================================================================================================# 
+# CI Build and Artifact / Image Creation  -  GITHub Packages is recommended for Storing packages
+
+  Build_Test_and_Deploy_Package:
+    runs-on: ubuntu-latest
+    environment: Non-prod
+    needs: [pre-work-setup]
+    steps:
+    - name: ============ Checkout the repository Code ==========
+      uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+    
+    - name: ========== Build and push Build Artifacts to artifact Store ==========
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI@maven-pull-branch
+      with:
+       
+# provide the project Build tool,  build file path and its relative location
+        build_tool: maven  # Supported values:maven/mvn/gradle
+        build_file_name: pom.xml
+        build_file_path: .
+# provide the Settings.xml filename and its relative location
+        settings_file_name: settings.xml 
+        settings_file_path: .  
+# Build phases/ sctions to execute and any  arguments that you need to execute the build depending on the build tool used
+# {sample phase has been added add additional maven phase if needed }
+        build_phases: clean package deploy
+        build_arguments: -Dgh_repo.pat=${{secrets.SAML_GITHUB_TOKEN}} -Dgh_repo.user=${{ secrets.SAML_GITHUB_USER }} 
+        
+        
+# Flag to run Code Quality Scan (Mandatory),       
+        run_code_quality_analysis: false 
+        
+# Ignore next 5 parameters (with cq_*) if run_code_quality_analysis is false
+# If the fag is true, Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
+        cq_host_url:  ${{env.SONAR_CLOUD_URL }}
+        cq_project_name: ${{ secrets.SONAR_PROJECT_NAME_MAVEN }}
+        cq_project_key: ${{ secrets.SONAR_PROJECT_KEY_MAVEN }} 
+        cq_token: ${{ secrets.SONAR_TOKEN }}
+        cq_scan_arguments: -Dsonar.organization=digitalinnovation 
+
+# Flag to include Creation of Container Image and Push to Registry       
+        build_and_push_container_image: true  # does the build create docker image and push to registry
+        
+# Ignore all  parametes with cr_* if build_and_push_container_image is false [ you can also invoke this separately]
+# Provide the Dockerfile name and its relative path to build the image
+        cr_dockerfile_name: Dockerfile 
+        cr_dockerfile_path: ./          
+# Provide the information of the Projects ImageName, Imagetag, 
+# Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry you can setup secrets to reference here
+# ${{ secrets.REGISTRY_SERVER }}  ${{ secrets.REGISTRY_USER }} ${{ secrets.REGISTRY_PASSWORD }} 
+        
+        cr_servername: ${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   #reference from output of job: Pre-Work
+        cr_username: ${{secrets.SAML_GITHUB_USER }} 
+        cr_password: ${{secrets.SAML_GITHUB_TOKEN}}
+        cr_imagename: ${{env.CONTAINER_IMAGE_NAME}} 
+        cr_imagetag: ${{ github.run_number }} 
+        
+# update the tenant ID if you are using ACR 
+        cr_tenant: ${{secrets.ACR_TENANT}}  
+        cr_subscription: ${{secrets.SUBSCRIPTION_ID}}
+        
+##================================================================================================================================#  
+# Code Quality Scan Action - SonarCloud is the Recommended Tool        
+  
+  Code_Quality_Scan:
+    runs-on: ubuntu-latest #need to use self hosted runner for sonarqube.
+    needs: Build_Test_and_Deploy_Package
+    environment: Non-prod
+    continue-on-error: true
+    steps:
+    - name: ============ Checkout the repository Code ========== same as git-repo (get)
+      uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+
+    - name: ========== Run Code Quality Scan ==========
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@maven-pull-branch
+      with:
+# Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
+        build_tool: maven
+        build_file_name: pom.xml
+        build_file_path: .
+        settings_file_name: settings.xml 
+        settings_file_path: . 
+        cq_host_url: ${{env.SONAR_CLOUD_URL }}
+        cq_project_name: cloud-devsecops-pipelineactions
+        cq_project_key: DigitalInnovation_cloud-devsecops-pipelineactions
+        cq_token: ${{ secrets.SONAR_TOKEN }} 
+        cq_scan_arguments: -Dsonar.organization=digitalinnovation 
+          
+        
+##================================================================================================================================#  
+# Create Image and push to Containder Registry - GITHUB packages is the recommended Registry Server
+# You can use a standalone action to create a image in case there is no dependency with build.
+
+
+#   Build_Push_Container_image:
+#     runs-on: ubuntu-latest
+#     needs: [pre-work-setup]
+#     steps:
+#     - uses: actions/checkout@v3
+#     - name: =========  Build and push image to Container Registry. ===========
+#  # you can also add this as part of the build workflow by setting the build_and_push_container_image: true
+#       uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI/push_image@maven-pull-branch
+#       with:
+        
+#  # Provide the Dockerfile name and its relative path to build the image
+#         cr_dockerfile_name: Dockerfile
+#         cr_dockerfile_path: ./
+#         cr_docker_arguments: --build-arg GIT_AUTH_TOKEN=${{secrets.SAML_GITHUb_TOKEN}} 
+#  # Provide the information of the Projects ImageName, Imagetag, 
+#  # Container Registry to push (ACR/githubcontainer registry(GCR)) and the UserName, Password to connect to the Registry
+ 
+#         cr_servername: ${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   #reference from output of job: Pre-Work
+#         cr_username: ${{secrets.SAML_GITHUB_USER }} 
+#         cr_password: ${{secrets.SAML_GITHUB_TOKEN}}
+#         cr_imagename: ${{env.CONTAINER_IMAGE_NAME}} 
+#         cr_imagetag: ${{ github.run_number }} 
+        
+#  # Below properties is required if  you are using ACR
+#         #cr_tenant: ${{secrets.ACR_TENANT}}
+#         #cr_subscription: ${{secrets.SUBSCRIPTION_ID}}                   
+  
+##================================================================================================================================#  
+# Appsec Scan are mandated for All Projects and has to be included in your pipeline
+
+
+  Run_appsec_scans:
+    runs-on: ubuntu-latest
+    needs: [ pre-work-setup, Build_Test_and_Deploy_Package ]
+    continue-on-error: true
+    environment: Non-prod
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+       
+    - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@maven-pull-branch
+      with:
+# Set Falg to true if you want to run Dependency (SNYK) Scan,provide Name of the project Example: Test and Token should be created as GitHub secret
+        application_name: ${{env.APPLICATION_NAME}}  # Name of your Application
+        run_dependency_scan: true
+        dependency_scan_token: ${{ secrets.SNYK_API_TOKEN }}
+        
+# Set Falg to true if you want to run SAST (Fortify) Scan, provide Release ID,Scanner API Key and Scanner API secret should be created as secret
+        run_sast_scan: false
+        sast_release_id: ${{ secrets.FORTIFY_RELEASE_ID }}
+        sast_api_key: ${{ secrets.FORTIFY_CLIENT_ID}}
+        sast_api_secret: ${{ secrets.FORTIFY_CLIENT_SECRET}}
+        # flag download the sast scan result, if run_sast_scan: true
+        download_sast_scan_result: false
+        
+# Set Falg to true if you want to run Container (PRISMA) Scan,provide  Scanner Console URL,username and password should be created as GitHub secret
+        run_container_scan: true
+        container_scan_url: ${{ env.PRISMA_URL }}
+        container_scan_user: ${{ secrets.PRISMA_ACCESS_KEY_ID }}
+        container_scan_password: ${{ secrets.PRISMA_SECRET_KEY }} 
+        
+# Provide image name,tag, to be pulled in ACR. Example: nginx, 
+        image_name: ${{env.CONTAINER_IMAGE_NAME}}
+        image_tag: ${{ github.run_number }}
+# ACR/GCR Login Server name,Username and Password Example: <ACRname>azurecr.io, Leave this empty if the image is local.
+        registry_server: ${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}   #reference from output of job: Pre-Work or you have setup a secret ${{ secrets.REGISTRY_SERVER }}
+        registry_username: ${{ secrets.SAML_GITHUB_USER }} 
+        registry_password: ${{ secrets.SAML_GITHUB_TOKEN }} 
+
+##================================================================================================================================# 
+
+# Deployment - use this if you are using helm to deploy your project
+
+  Helm_deployment:
+    runs-on: ubuntu-latest
+    needs: [ pre-work-setup, Run_appsec_scans ]
+    # set the environment variable for job to use environement specific Secrets if configured.
+    environment: Non-prod
+    continue-on-error: true
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v2
+        with:
+          repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+          token: ${{ secrets.SAML_GITHUB_TOKEN }}
+          ref: main
+
+      - name: Deploy application 
+        uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@maven-pull-branch
+        with:
+          # Flag to verify if this is helm deployment
+          is_helm_deployment: true
+ # Deployment environment name. Supported values: dev/release/prod 
+          environment: dev
+            # Release name of the helm application
+          application_release_name: ${{env.APPLICATION_NAME}}-dev
+            # Kubeconfig for AKS cluster connection, should be created as GitHub secret
+          kube_config: ${{ secrets.KUBE_CONFIG }}            
+# provide relative path,Name of the values file to use to help helm chart folder
+          helm_chart_path: ${{env.Chart}}
+          helm_values_file: Values.yaml
+# Provide Image name,tag,Namespace of the cluster to deploy
+          image_name: ${{env.CONTAINER_IMAGE_NAME}}
+          image_tag: ${{ github.run_number }} 
+          cluster_namespace: ${{ env.CLUSTER_NAMESPACE }}  #  sample-app
+# Flag to create new namespace if not already existing
+          create_namespace: false
+# Additional helm arguments eg: --set 'dockerImage=${{env.CONTAINER_IMAGE_NAME}} and Flag to run as dry run
+          helm_argument: "--set 'image.repository=${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}/${{env.CONTAINER_IMAGE_NAME}}:${{ github.run_number }}'"
+          dry_run: false
+
+
+
+##================================================================================================================================# 
+####   Sample Webapp Deployment require the webapp name, and the publish profile along with the path to the pacage or source path.       
+            
+# # Deploy the webapp to the webapp layer created by Bright or Manual. 
+  Deploy-webapp:
+    runs-on: ubuntu-latest
+    needs: [ pre-work-setup, Run_appsec_scans ]  # needs pre-work if you are referencing the output
+    environment: Non-prod
+    steps:  
+    - uses: actions/checkout@v2
+      with:
+        repository: DigitalInnovation/Cloud-DevSecOps-Pipeline-Java
+        token: ${{ secrets.SAML_GITHUB_TOKEN }}
+        ref: main
+     
+    - name: 'Deploy to Azure WebApp'
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@maven-pull-branch
+      with:
+        is_azure_webapp_deployment: true
+        environment: dev # this is app specific variable if you need   
+        application_release_name: 2.10
+        webapp_name: ${{secrets.AZURE_WEBAPP_NAME}}
+        
+        #source_path: .    # you can reference source or container image:tag
+        image_name: ${{needs.pre-work-setup.outputs.GH_REGISTRY_SERVER_LOWERCASE}}/${{env.CONTAINER_IMAGE_NAME}}
+        image_tag: ${{ github.run_number }}
+
+        #azure_profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        
+        # the below parameters are not Required if you are using PUBLISH Profile.
+        azure_client_id: ${{secrets.SP_CLIENTID}}
+        azure_client_secret: ${{secrets.SP_PASSWORD}}
+        subscription: ${{secrets.SUBSCRIPTION_ID}}
+        azure_tenant_id: ${{env.SP_TENANT_ID}}
+
+
+##================================================================================================================================# 
+
+          
+#Observability  
+  NewRelic_Deploymentmarker:
+    runs-on: ubuntu-latest
+    needs: Helm_deployment
+    environment: Non-prod
+    continue-on-error: true
+    steps:
+    - name: New Relic deployment marker
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@maven-pull-branch
+      with: 
+        set_newRelic_Deployment_marker: true
+ # provide Newrelic API Key,Account ID,Application ID and Newrelic user should be created as GitHub Secret
+        newRelic_key: ${{secrets.NEW_RELIC_API_KEY}} 
+        newRelic_accountId: ${{secrets.NEW_RELIC_ACCOUNT_ID}}
+        newRelic_applicationId: ${{secrets.NEW_RELIC_APP_ID}}
+        newRelic_user: ${{ github.actor }}
+        git_commit_id: ${{ github.sha }}
+        comment: " comments "  
+
+        
+##============================END OF PIPELINE WORKFLOW=================================================================================# 
