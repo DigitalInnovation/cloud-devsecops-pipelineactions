@@ -9,6 +9,8 @@ on:
       #- "**.md"
       - mkdocs.yml
       - catalog-info.yaml
+      - .github/workflows/semantic_versioning.yml
+      - .github/release.yml
 
    
   #push:
@@ -73,7 +75,7 @@ jobs:
     steps:
       - name: Removing New composite config Pull branch
         run: |
-          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.SAML_GITHUB_TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/branch-pull
+          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.SAML_GITHUB_TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/gradle-pull-branch
       - id: pull
         run: |
              pull_branch=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")

@@ -5,9 +5,11 @@ on:
     types: [assigned, opened, synchronize, reopened]
     paths-ignore:
       - docs/**
-      - "**.md"
+      #- "**.md"
       - mkdocs.yml
       - catalog-info.yaml
+      - .github/workflows/semantic_versioning.yml
+      - .github/release.yml
 
 # #####  Please Make sure you have the secrets setup in ################
 
@@ -62,7 +64,52 @@ env:
 
 
 jobs:
+    # TO get the changes from the pull request branch, below job will create a new branch from pull request branch and replace @<version> with @new branch
+  pre-composite-action-setup:
+    environment: Non-prod
+    runs-on: ubuntu-latest
+    outputs: 
+      new-branch: ${{ steps.check.outputs.new-branch }}
+    steps:
+      - name: Removing New composite config Pull branch
+        run: |
+          curl -X DELETE -H "Accept: application/vnd.github+json" -H "Authorization: token ${{secrets.SAML_GITHUB_TOKEN}}" https://api.github.com/repos/Test-Spike/composite-actions/git/refs/heads/node-pull-branch
+      - id: pull
+        run: |
+             pull_branch=$(jq --raw-output .pull_request.head.ref "$GITHUB_EVENT_PATH")
+             echo "Pull request Branch: $pull_branch"
+             echo "::set-output name=pull_branch::$pull_branch"
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.pull.outputs.pull_branch}}
+      - run: |
+          tag=$(curl -s -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/DigitalInnovation/cloud-devsecops-pipelineactions/releases/latest" | jq -r '.tag_name')
+          echo "CURRENT TAG: $tag"
+          echo "::set-output name=old_version::$tag"
+          b=(${tag//"-"/ })
+          #t=${b[0]}
+          t=v1.0.22
+          git config --global user.name 'Y9886988'
+          git config --global user.email 'Y9886988@mnscorp.onmicrosoft.com'
+          git clone https://Y9886988:${{secrets.SAML_GITHUB_TOKEN}}@github.com/DigitalInnovation/cloud-devsecops-pipelineactions.git
+          cd cloud-devsecops-pipelineactions
+          git checkout ${{ steps.pull.outputs.pull_branch}}
+          git checkout -b node-pull-branch
+          echo "***************Printing $t mentioned places****************"
+          grep -rn "@$t" *  
+          echo "******************Replacing $t with node-pull-branch in all action.yml files*******************"
+          find ./ -type f -exec sed -i -e "s|@$t|@node-pull-branch|g" {} \;
+          echo "Replacing $t with node-pull-branch in all action.yml files"
+          echo "******************After replacing new version, Printing  mentioned places**************************"
+          grep -rn "@node-pull-branch" *
+          echo "*********************Pushing changes into the main branch***********************"
+          git add .
+          git commit -am "Replacing $t with node-pull-branch in all action.yml files"
+          git push origin node-pull-branch
+
+
   Pre-Work:
+    needs: [pre-composite-action-setup]
     runs-on: ubuntu-latest 
     outputs:
         GH_REGISTRY_SERVER_LOWERCASE: ${{ steps.get_gh_registry.outputs.GH_REGISTRY_LOWER }}
@@ -160,7 +207,7 @@ jobs:
         ref: main
      
     - name: ========== call custom action to execute CodeQuality Scan ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/codequality@node-pull-branch
       with:
 # Provide the Sonar URL, Project name or ProjectKey and the Sonar token to connect.
         build_tool: npm
@@ -190,7 +237,7 @@ jobs:
       
     - name: =========  Build and push image to Container Registry. ===========
 # you can also add this as part of the build workflow by setting the build_and_push_container_image: true
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI/push_image@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CI/push_image@node-pull-branch
       with:
 # Provide the Dockerfile name and its relative path to build the image
         cr_dockerfile_name: Dockerfile
@@ -240,7 +287,7 @@ jobs:
         build_phases: install
         
 ####  Run Composite actions to execute Various APP SEC scan per requirement  ####          
-    - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@latest
+    - uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec@node-pull-branch
       with:
 # Set Flag to true if you want to run Dependency (SNYK) Scan,provide Name of the project Example: Test and Token should be created as GitHub secret
         application_name: ${{env.APPLICATION_NAME}}  # Name of your Application
@@ -303,7 +350,7 @@ jobs:
         
          
     - name: 'Deploy to Azure WebApp'
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD@node-pull-branch
       with:
         is_azure_webapp_deployment: true
         environment: dev    
@@ -336,7 +383,7 @@ jobs:
     continue-on-error: true
     steps:
     - name: New Relic deployment marker
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@latest
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/observability@node-pull-branch
       with: 
         set_newRelic_Deployment_marker: true
 # provide Newrelic API Key,Account ID,Application ID and Newrelic user should be created as GitHub Secret
