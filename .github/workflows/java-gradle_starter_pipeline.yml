@@ -90,7 +90,7 @@ jobs:
           t=v1.0.22
           git config --global user.name 'Y9886988'
           git config --global user.email 'Y9886988@mnscorp.onmicrosoft.com'
-          git clone https://Y9886988:${{secrets.TOKEN}}@github.com/DigitalInnovation/cloud-devsecops-pipelineactions.git
+          git clone https://Y9886988:${{secrets.SAML_GITHUB_TOKEN}}@github.com/DigitalInnovation/cloud-devsecops-pipelineactions.git
           cd cloud-devsecops-pipelineactions
           git checkout ${{ steps.pull.outputs.pull_branch}}
           git checkout -b gradle-pull-branch
