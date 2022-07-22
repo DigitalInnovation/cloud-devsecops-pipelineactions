@@ -70,7 +70,7 @@ runs:
     - run : echo $RUNNER_NAME $RUNNER_OS $RUNNER_ARCH $RUNNER_TEMP
       shell: bash  
     - name: ========== Deploy project using helm ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD/helm@v1.0.24
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD/helm@maven-pull-branch
       if: ${{ inputs.is_helm_deployment == 'true'}}
       with:
         environment: ${{inputs.environment}}
@@ -92,7 +92,7 @@ runs:
         deployment_script_name: ${{inputs.deployment_script_name}}
         
     - name: ========== AZURE WEB APP Deployment ==========
-      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD/azure-webapp@v1.0.24
+      uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/CD/azure-webapp@maven-pull-branch
       if: ${{ inputs.is_azure_webapp_deployment == 'true'}}
       with:
         environment: ${{inputs.environment}}
