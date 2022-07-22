@@ -85,7 +85,7 @@ runs:
     if: ${{inputs.run_dependency_scan == 'true' &&  inputs.dependency_scan_token }}
   
   - name: Snyk SCA Scanning
-    uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec/snyk@v1.0.24
+    uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec/snyk@node-pull-branch
     with:      
       dependency_scan_token: ${{ inputs.dependency_scan_token }}
       dependency_scan_arguments: ${{ inputs.dependency_scan_arguments }}
@@ -128,7 +128,7 @@ runs:
     shell: bash
     if: ${{inputs.run_container_scan == 'true' }}
   - name: Run Container Scan for Repostiory
-    uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec/prisma@v1.0.24
+    uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec/prisma@node-pull-branch
     with: 
       container_scan_user: ${{ inputs.container_scan_user }}
       container_scan_password: ${{ inputs.container_scan_password }}
@@ -178,7 +178,7 @@ runs:
     if: ${{inputs.run_sast_scan == 'true' }}
     
   - name: Fortify Scan Create source Zip upload to FOD for Scanning
-    uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec/fortify@v1.0.24
+    uses: DigitalInnovation/cloud-devsecops-pipelineactions/workflows/appsec/fortify@node-pull-branch
     with:
       sast_release_id: ${{inputs.sast_release_id }}
       sast_api_key: ${{ inputs.sast_api_key}}
